@@ -66,7 +66,7 @@ html,body{background:#000;min-height:100vh;min-height:100dvh;width:100%;font-fam
 .intro-hint{font-size:11px;color:rgba(0,255,136,0.65);letter-spacing:1px;margin-top:20px;}
 .intro-code{margin-top:14px;border:1px solid rgba(0,255,136,0.10);background:linear-gradient(90deg,rgba(0,255,136,0.02),rgba(0,255,136,0.006));padding:12px 14px;clip-path:polygon(0 0,calc(100% - 8px) 0,100% 8px,100% 100%,8px 100%,0 calc(100% - 8px));font-size:11px;line-height:1.62;color:rgba(0,255,136,0.45);letter-spacing:.7px;min-height:180px;overflow:hidden;}
 .intro-code-line{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:0;transform:translateY(5px);}
-#s-intro:not(.hidden) .intro-code-line{animation:introCodeIn .28s ease forwards;}
+/* intro code lines are revealed by the typewriter (animateIntroCode), not by CSS stagger */
 #s-intro:not(.hidden) .intro-code-line:nth-child(1){animation-delay:.05s;}
 #s-intro:not(.hidden) .intro-code-line:nth-child(2){animation-delay:.18s;}
 #s-intro:not(.hidden) .intro-code-line:nth-child(3){animation-delay:.31s;}
@@ -82,6 +82,23 @@ html,body{background:#000;min-height:100vh;min-height:100dvh;width:100%;font-fam
 @keyframes introCodeIn{to{opacity:1;transform:translateY(0);}}
 .intro-code-line strong{color:rgba(255,255,255,0.82);font-weight:400;}
 .intro-code-dim{color:rgba(0,255,136,0.28);}
+.code-typing,.code-typed{opacity:1!important;transform:none!important;animation:none!important;text-overflow:clip!important;}
+.code-typing::after{content:"█";display:inline-block;margin-left:2px;color:#00ff88;animation:typeCaret .72s steps(1,end) infinite;}
+@keyframes typeCaret{50%{opacity:0;}}
+.term-cursor{display:inline-block;width:8px;height:1em;background:#00ff88;margin-left:4px;vertical-align:-2px;box-shadow:0 0 6px rgba(0,255,136,0.6);animation:typeCaret .72s steps(1,end) infinite;}
+@media (prefers-reduced-motion:reduce){.term-cursor{animation:none;}}
+.boot-lang-opt{cursor:pointer;color:rgba(0,255,136,0.45);letter-spacing:1px;transition:color .15s,text-shadow .15s;}
+.boot-lang-opt:hover{color:#00ff88;}
+.boot-lang-opt.active{color:#00ff88;text-shadow:0 0 7px rgba(0,255,136,0.55);}
+/* QUIZ AMBIENT CODE */
+#s-quiz{position:relative;}
+.quiz-ambient{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.quiz-ambient span{position:absolute;font-family:'Share Tech Mono',monospace;font-size:10px;white-space:nowrap;color:#00ff88;opacity:.06;letter-spacing:.5px;}
+#s-quiz>*:not(.quiz-ambient){position:relative;z-index:1;}
+@media (prefers-reduced-motion:reduce){
+  .intro-code-line,.quiz-code-line{opacity:1!important;transform:none!important;animation:none!important;}
+  .code-typing::after{content:none;}
+}
 .intro-btns{display:flex;flex-direction:column;gap:12px;margin-top:28px;}
 .screen{gap:18px;}
 .screen > div{min-width:0;}
@@ -552,34 +569,34 @@ body{padding:0;touch-action:manipulation;}
   <div style="flex:1;overflow:hidden;min-height:0;">
     <div class="glitch" data-text="BIOCODED" style="font-size:32px;margin-bottom:16px;display:block;">BIOCODED</div>
     <div class="boot-log" id="boot-log" style="overflow:hidden;"></div>
-    <div class="boot-context">
-      <div class="boot-context-row"><span>CORTEX-NET</span><span>ANOMALOUS HANDSHAKE</span></div>
-      <div class="boot-context-row"><span>PAMYEL</span><span>TITAN INTERIOR / ACTIVE</span></div>
-      <div class="boot-context-row"><span>SUBJECT</span><span>AWAKENING PROTOCOL READY</span></div>
+    <div class="boot-context" id="boot-context" style="opacity:0;transition:opacity .7s ease;">
+      <div class="boot-context-row"><span>CORTEX-NET</span><span data-i18n="bootctx_1">ANOMALOUS HANDSHAKE</span></div>
+      <div class="boot-context-row"><span>PAMYEL</span><span data-i18n="bootctx_2">TITAN INTERIOR / ACTIVE</span></div>
+      <div class="boot-context-row"><span data-i18n="bootctx_subj">SUBJECT</span><span data-i18n="bootctx_3">AWAKENING PROTOCOL READY</span></div>
     </div>
   </div>
-  <button type="button" id="boot-run-btn" class="btn" onclick="return __biocodedRun(event)" style="width:100%;flex-shrink:0;margin-top:20px;">[ RUN ]</button>
+  <button type="button" id="boot-run-btn" class="btn" data-i18n="btn_run" onclick="return __biocodedRun(event)" style="width:100%;flex-shrink:0;margin-top:20px;">[ RUN ]</button>
 </div>
 
 <!-- INTRO -->
 <div id="s-intro" class="screen hidden" style="justify-content:space-between;">
   <div>
     <div class="glitch" data-text="BIOCODED" style="font-size:30px;display:block;">BIOCODED</div>
-    <div class="page-hdr-sub" style="margin-top:6px;margin-bottom:16px;">DESPERTO CLASSIFICATION PROTOCOL v.4.1</div>
+    <div class="page-hdr-sub" data-i18n="intro_sub" style="margin-top:6px;margin-bottom:16px;">DESPERTO CLASSIFICATION PROTOCOL v.4.1</div>
     <div class="intro-status" style="font-size:12px;margin-bottom:14px;">
-      <div>CORTEX-NET SIGNAL: ANOMALY DETECTED</div>
-      <div>WIREBRAIN REWRITE: FAILED</div>
-      <div>DESPERTO STATUS: CONFIRMED</div>
+      <div data-i18n="intro_st1">CORTEX-NET SIGNAL: ANOMALY DETECTED</div>
+      <div data-i18n="intro_st2">WIREBRAIN REWRITE: FAILED</div>
+      <div data-i18n="intro_st3">DESPERTO STATUS: CONFIRMED</div>
     </div>
     <div class="intro-transmission">
-      <div class="intro-h" style="font-size:15px;">T-Corp controls your perceptions, weaving your reality.</div>
-      <div class="intro-h" style="font-size:15px;">But you, somehow, broke the Protocol.</div>
-      <div class="intro-p" style="font-size:13px;">They tried to rewrite you. It couldn't. And what you became instead is what this terminal is here to find out.</div>
-      <div class="intro-desperto" style="font-size:18px;margin-top:10px;">You're now Desperto.</div>
-      <div class="intro-antidote" style="font-size:11px;">Prepare to insert the Antidote.</div>
+      <div class="intro-h" data-i18n="intro_h1" style="font-size:15px;">T-Corp controls your perceptions, weaving your reality.</div>
+      <div class="intro-h" data-i18n="intro_h2" style="font-size:15px;">But you, somehow, broke the Protocol.</div>
+      <div class="intro-p" data-i18n="intro_p" style="font-size:13px;">They tried to rewrite you. It couldn't. And what you became instead is what this terminal is here to find out.</div>
+      <div class="intro-desperto" data-i18n="intro_desperto" style="font-size:18px;margin-top:10px;">You're now Desperto.</div>
+      <div class="intro-antidote" data-i18n="intro_antidote" style="font-size:11px;">Prepare to insert the Antidote.</div>
     </div>
-    <div class="intro-hint" style="margin-top:12px;">// 8 QUESTIONS // ARCHETYPE // ECHO // FACTION // UNIT ID</div>
-    <div class="intro-code">
+    <div class="intro-hint" data-i18n="intro_hint" style="margin-top:12px;">// 8 QUESTIONS // ARCHETYPE // ECHO // FACTION // UNIT ID</div>
+    <div class="intro-code" id="intro-code">
       <div class="intro-code-line"><span class="intro-code-dim">import</span> { scan, fracture, route } <span class="intro-code-dim">from</span> <strong>"cortex-net/terminal"</strong>;</div>
       <div class="intro-code-line"><span class="intro-code-dim">const</span> subject = scan(<strong>"DESPERTO"</strong>, { protocol: <strong>"v4.1"</strong> });</div>
       <div class="intro-code-line"><span class="intro-code-dim">const</span> memory = fracture(subject.boneArchive, subject.signal);</div>
@@ -603,16 +620,16 @@ body{padding:0;touch-action:manipulation;}
 <div id="s-codename" class="screen hidden" style="justify-content:space-between;">
   <div>
     <div class="glitch" data-text="BIOCODED" style="font-size:30px;display:block;">BIOCODED</div>
-    <div class="page-hdr-sub" style="margin-top:6px;margin-bottom:24px;">IDENTIFICATION REQUIRED</div>
-    <div class="codename-label" style="margin-bottom:20px;">Before the scan begins, the system needs to identify you.</div>
-    <input class="codename-inp" id="codename-inp" maxlength="20" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" placeholder="your codename" oninput="updateCodenameCode()" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmCodename();}"/>
-    <div class="codename-hint" style="margin-top:8px;">// TYPE AND PRESS CONFIRM</div>
+    <div class="page-hdr-sub" data-i18n="cn_sub" style="margin-top:6px;margin-bottom:24px;">IDENTIFICATION REQUIRED</div>
+    <div class="codename-label" data-i18n="cn_label" style="margin-bottom:20px;">Before the scan begins, the system needs to identify you.</div>
+    <input class="codename-inp" id="codename-inp" maxlength="20" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" data-i18n-ph="cn_ph" placeholder="your codename" oninput="updateCodenameCode()" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmCodename();}"/>
+    <div class="codename-hint" data-i18n="cn_hint" style="margin-top:8px;">// TYPE AND PRESS CONFIRM</div>
     <div class="codename-code">
       <pre id="codename-code-preview"></pre>
-      <div class="codename-code-output">// OUTPUT: <strong id="codename-output">nakt-REPLACENAME</strong></div>
+      <div class="codename-code-output"><span data-i18n="cn_output">// OUTPUT:</span> <strong id="codename-output">nakt-REPLACENAME</strong></div>
     </div>
   </div>
-  <button class="btn" onclick="confirmCodename()">CONFIRM</button>
+  <button class="btn" data-i18n="cn_confirm" onclick="confirmCodename()">CONFIRM</button>
 </div>
 
 <!-- ADAPT/EVOLVE -->
@@ -644,6 +661,7 @@ body{padding:0;touch-action:manipulation;}
 
 <!-- QUIZ -->
 <div id="s-quiz" class="screen hidden" style="justify-content:space-between;padding-bottom:24px;">
+  <div class="quiz-ambient" id="quiz-ambient" aria-hidden="true"></div>
   <div class="quiz-hdr" style="flex-shrink:0;">
     <div class="glitch" data-text="BIOCODED" style="font-size:26px;">BIOCODED</div>
     <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quiz-bar" style="width:0%"></div></div>
@@ -676,7 +694,7 @@ body{padding:0;touch-action:manipulation;}
 <!-- ARCHETYPE REVEAL -->
 <div id="s-archetype" class="arc-reveal-screen hidden">
   <div class="arc-reveal-inner">
-    <div class="arc-scan-label">// SCAN COMPLETE: NEURAL PATTERN IDENTIFIED</div>
+    <div class="arc-scan-label" data-i18n="arc_scan_label">// SCAN COMPLETE: NEURAL PATTERN IDENTIFIED</div>
     <div class="arc-cta-hint" data-i18n="arch_cta">The scan found a psychological pattern: your instinct, wound, desire, and pressure response. That is the Archetype. It shapes attributes of your physical projection, your mental mechanisms, and the way you break and resist.</div>
     <div class="arc-result-panel">
       <div class="arc-name-row">
@@ -712,7 +730,7 @@ body{padding:0;touch-action:manipulation;}
 <div id="s-classlist" class="screen decision-screen hidden">
   <div class="screen-head">
     <div class="glitch" data-text="BIOCODED" style="font-size:26px;display:block;">BIOCODED</div>
-    <div class="screen-kicker">// ECHO SELECTION</div>
+    <div class="screen-kicker" data-i18n="echo_kicker">// ECHO SELECTION</div>
     <div class="screen-copy" data-i18n="echo_sub">Listen to your Echo. Echo is your class: the awakened mutation pattern within you. It defines your abilities, role, and threshold.</div>
   </div>
   <div class="cls-grid decision-grid" id="cls-grid"></div>
@@ -732,11 +750,11 @@ body{padding:0;touch-action:manipulation;}
   <div class="cls-stats-row" id="cd-stats"></div>
   <div class="cls-sig" id="cd-sig">--</div>
   <hr class="divider" style="margin:12px 0;">
-  <div style="font-size:9px;color:rgba(0,255,136,0.38);letter-spacing:2px;margin-bottom:10px;">// ABILITIES: TAP TO EXPAND</div>
+  <div style="font-size:9px;color:rgba(0,255,136,0.38);letter-spacing:2px;margin-bottom:10px;" data-i18n="cd_abilities_hint">// ABILITIES: TAP TO EXPAND</div>
   <div id="cd-abilities" style="overflow-y:auto;flex:1;"></div>
   <div class="cls-detail-btns">
-    <button class="btn" onclick="confirmClass()">CONFIRM ECHO</button>
-    <button class="btn secondary" onclick="show('s-classlist')">BACK</button>
+    <button class="btn" data-i18n="cd_confirm" onclick="confirmClass()">CONFIRM ECHO</button>
+    <button class="btn secondary" data-i18n="btn_back" onclick="show('s-classlist')">BACK</button>
   </div>
 </div>
 
@@ -744,7 +762,7 @@ body{padding:0;touch-action:manipulation;}
 <div id="s-faction" class="screen decision-screen hidden">
   <div class="screen-head">
     <div class="glitch" data-text="BIOCODED" style="font-size:26px;display:block;">BIOCODED</div>
-    <div class="screen-kicker">// FACTION ALIGNMENT</div>
+    <div class="screen-kicker" data-i18n="faction_kicker">// FACTION ALIGNMENT</div>
     <div class="screen-copy" data-i18n="faction_intro">Choose who found you when you woke up. A Faction offers shelter, funding, equipment, and work. Every offer leaves a mark.</div>
   </div>
   <div class="decision-context">
@@ -818,14 +836,14 @@ body{padding:0;touch-action:manipulation;}
       <div class="echo-resource" id="sh-echo-resource"></div>
     </div>
     <div class="portrait-block">
-      <div class="block-label">// PORTRAIT</div>
+      <div class="block-label" data-i18n="sh_portrait">// PORTRAIT</div>
       <div class="portrait-slot" id="portrait-slot" onclick="if(!imgState.img)triggerPortrait()">
-        <div class="portrait-placeholder" id="portrait-placeholder">TAP TO ADD PHOTO<br><span style="font-size:9px;opacity:0.7;">select from gallery</span></div>
+        <div class="portrait-placeholder" id="portrait-placeholder"><span data-i18n="portrait_tap">TAP TO ADD PHOTO</span><br><span style="font-size:9px;opacity:0.7;" data-i18n="portrait_gallery">select from gallery</span></div>
         <canvas id="portrait-canvas" style="display:none;"></canvas>
       </div>
       <div class="portrait-controls" id="portrait-controls" style="display:none;">
-        <button class="portrait-btn" onclick="triggerPortrait()">[ CHANGE ]</button>
-        <button class="portrait-btn" onclick="resetPortrait()">[ RESET ]</button>
+        <button class="portrait-btn" data-i18n="portrait_change" onclick="triggerPortrait()">[ CHANGE ]</button>
+        <button class="portrait-btn" data-i18n="portrait_reset" onclick="resetPortrait()">[ RESET ]</button>
       </div>
       <input type="file" accept="image/*" id="portrait-file" style="display:none;" onchange="handlePortrait(event)"/>
     </div>
@@ -856,7 +874,7 @@ body{padding:0;touch-action:manipulation;}
   <div id="tab-market" class="sheet-page" style="display:none;overflow-y:auto;background:#000;">
     <div class="market-sticky">
       <div>
-        <div style="font-size:10px;color:rgba(0,255,136,0.5);letter-spacing:2px;">// CONTRABAND REGISTRY</div>
+        <div style="font-size:10px;color:rgba(0,255,136,0.5);letter-spacing:2px;" data-i18n="market_h">// CONTRABAND REGISTRY</div>
         <div class="market-note" data-i18n="market_r_note">Relic (R) is earned through missions, faction work, and recovered assets. Set your balance as the GM awards it.</div>
       </div>
       <div class="market-relic-controls">
@@ -1191,16 +1209,152 @@ const BOOT_LINES=[
   "System ready. Awaiting command.",
   ""
 ];
+const BOOT_LINES_PT=[
+  "PROTOCOLO DE DIAGNÓSTICO DO TERMINAL",
+  "",
+  "> iniciar cortex-net/ouvinte --silencioso",
+  "Carregando módulos do núcleo...",
+  "Driver do WireBrain: OK",
+  "Relé sináptico: ATIVO",
+  "Daemon de reescrita de DNA: EM ESPERA",
+  "Scanner de Sinal: PRONTO",
+  "",
+  "se (sujeito.sinal == 0) {",
+  "  preservar(memoria.fragmento);",
+  "  marcar('CANDIDATO_DESPERTO');",
+  "}",
+  "",
+  "Mapeando setores do interior de Pamyel...",
+  "Arquivo ósseo do Titã: parcial",
+  "Uplink do Deserto de Ferro: instável",
+  "Feed do Oceano Cósmico: criptografado",
+  "Detecção de Desperto: HABILITADA",
+  "",
+  "Sistema pronto. Aguardando comando.",
+  ""
+];
+function bootLines(){return currentLang==='PT'?BOOT_LINES_PT:BOOT_LINES;}
 
 let st={scores:{},currentQ:0,quizTrace:[],charName:"",weaponIdx:null,classResult:"",pendingClass:"",factionResult:"",arcResult:"",processing:false,signalLevel:0,currentId:"",clockMarked:0,implantIdx:0,implantSlots:0,implantAbsorb:0,implantUsed:0,inventory:{},suitModules:[],relics:0,owned:[],upgrades:{},mementoSlots:['','',''],overdrive:0,tally:0,armorUsed:0};
 let marketFilter='ALL';
 let libraryFilter='ALL';
 let imgState={img:null,offsetX:0,offsetY:0,scale:1,rawB64:""};
+let typewriterRun=0;
+
+function reducedMotion(){
+  return !!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+function stripMarkup(html){
+  var tmp=document.createElement('div');
+  tmp.innerHTML=html||'';
+  return tmp.textContent||tmp.innerText||'';
+}
+function typeCodeElement(el,html,opts){
+  opts=opts||{};
+  var run=opts.run||++typewriterRun;
+  var text=opts.text!=null?String(opts.text):stripMarkup(html);
+  var finalHtml=html!=null?html:escapeHtml(text);
+  var speed=opts.speed||9;
+  var chunk=opts.chunk||1;
+  if(!el)return Promise.resolve();
+  el.dataset.fullHtml=finalHtml;
+  el.classList.remove('code-typed');
+  el.classList.add('code-typing');
+  if(reducedMotion()){
+    el.innerHTML=finalHtml;
+    el.classList.remove('code-typing');
+    el.classList.add('code-typed');
+    return Promise.resolve();
+  }
+  el.textContent='';
+  return new Promise(function(resolve){
+    var i=0;
+    function step(){
+      if(run!==typewriterRun&&opts.cancelable!==false){
+        el.classList.remove('code-typing');
+        el.classList.add('code-typed');
+        resolve();
+        return;
+      }
+      el.textContent=text.slice(0,i);
+      i+=chunk;
+      if(i<text.length){
+        setTimeout(step,speed);
+      }else{
+        el.innerHTML=finalHtml;
+        el.classList.remove('code-typing');
+        el.classList.add('code-typed');
+        resolve();
+      }
+    }
+    step();
+  });
+}
+async function typeCodeLines(lines,opts){
+  opts=opts||{};
+  var run=++typewriterRun;
+  for(var i=0;i<lines.length;i++){
+    var el=lines[i];
+    var html=el.dataset.fullHtml||el.innerHTML;
+    await typeCodeElement(el,html,{run:run,speed:opts.speed||8,chunk:opts.chunk||1});
+    if(opts.delay)await new Promise(function(r){setTimeout(r,opts.delay);});
+  }
+}
 
 function show(id){
   document.querySelectorAll('.screen,.arc-reveal-screen,.sheet').forEach(s=>s.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
   window.scrollTo(0,0);
+  if(id==='s-intro')setTimeout(animateIntroCode,30);
+}
+
+var INTRO_CODE={
+  EN:[
+    '<span class="intro-code-dim">import</span> { scan, fracture, route } <span class="intro-code-dim">from</span> <strong>"cortex-net/terminal"</strong>;',
+    '<span class="intro-code-dim">const</span> subject = scan(<strong>"DESPERTO"</strong>, { protocol: <strong>"v4.1"</strong> });',
+    '<span class="intro-code-dim">const</span> memory = fracture(subject.boneArchive, subject.signal);',
+    'if (subject.signal === 0) preserve(memory.residue);',
+    'if (subject.rewrite === <strong>"FAILED"</strong>) open(<strong>"ARCHETYPE_SCAN"</strong>);',
+    'queue(<strong>"8_QUESTIONS"</strong>, <strong>"ECHO_FILE"</strong>, <strong>"FACTION_KEY"</strong>);',
+    'route(PAMYEL, <strong>"TITAN_INTERIOR"</strong>, subject.faction);',
+    'unlock(<strong>"UNIT_ID"</strong>).bind(subject.codename);',
+    '<span class="intro-code-dim">// Cortex-Net access denied.</span>',
+    '<span class="intro-code-dim">// Memory residue preserved.</span>',
+    '<span class="intro-code-dim">// Antidote insertion pending.</span>'
+  ],
+  PT:[
+    '<span class="intro-code-dim">importar</span> { escanear, fraturar, rotear } <span class="intro-code-dim">de</span> <strong>"cortex-net/terminal"</strong>;',
+    '<span class="intro-code-dim">const</span> sujeito = escanear(<strong>"DESPERTO"</strong>, { protocolo: <strong>"v4.1"</strong> });',
+    '<span class="intro-code-dim">const</span> memoria = fraturar(sujeito.arquivoOsseo, sujeito.sinal);',
+    'se (sujeito.sinal === 0) preservar(memoria.residuo);',
+    'se (sujeito.reescrita === <strong>"FALHOU"</strong>) abrir(<strong>"SCAN_ARQUETIPO"</strong>);',
+    'enfileirar(<strong>"8_PERGUNTAS"</strong>, <strong>"ARQUIVO_ECO"</strong>, <strong>"CHAVE_FACCAO"</strong>);',
+    'rotear(PAMYEL, <strong>"INTERIOR_DO_TITA"</strong>, sujeito.faccao);',
+    'desbloquear(<strong>"UNIT_ID"</strong>).vincular(sujeito.codinome);',
+    '<span class="intro-code-dim">// Acesso à Cortex-Net negado.</span>',
+    '<span class="intro-code-dim">// Resíduo de memória preservado.</span>',
+    '<span class="intro-code-dim">// Inserção do antídoto pendente.</span>'
+  ]
+};
+function renderIntroCode(){
+  var box=document.getElementById('intro-code');if(!box)return;
+  var arr=INTRO_CODE[currentLang]||INTRO_CODE.EN;
+  box.innerHTML=arr.map(function(h){return '<div class="intro-code-line">'+h+'</div>';}).join('');
+}
+function animateIntroCode(){
+  renderIntroCode();
+  var lines=[].slice.call(document.querySelectorAll('#s-intro .intro-code-line'));
+  if(!lines.length)return;
+  lines.forEach(function(line){
+    if(!line.dataset.fullHtml)line.dataset.fullHtml=line.innerHTML;
+    Array.prototype.forEach.call(line.querySelectorAll('.term-cursor'),function(c){c.parentNode.removeChild(c);});
+  });
+  typeCodeLines(lines,{speed:1,delay:4,chunk:4}).then(function(){
+    var last=lines[lines.length-1];
+    if(last&&!last.querySelector('.term-cursor')){
+      var cur=document.createElement('span');cur.className='term-cursor';last.appendChild(cur);
+    }
+  });
 }
 
 function switchTab(name){
@@ -1223,50 +1377,109 @@ function handleBoot(e){
   document.getElementById('boot-inp').value='';
   if(v==='/run'||v==='run'){show('s-intro');}
   else if(v){
-    const d=document.createElement('div');d.className='boot-ln';d.textContent="'"+v+"' not recognized. Try /run";
+    const d=document.createElement('div');d.className='boot-ln';d.textContent=currentLang==='PT'?("'"+v+"' não reconhecido. Tente /run"):("'"+v+"' not recognized. Try /run");
     document.getElementById('boot-log').appendChild(d);
   }
 }
 
 function initBoot(){
   const log=document.getElementById('boot-log');log.innerHTML='';
-  BOOT_LINES.forEach((line,i)=>{
-    setTimeout(()=>{
+  var ctx=document.getElementById('boot-context');if(ctx)ctx.style.opacity='0';
+  var run=++typewriterRun;
+  var LINES=bootLines();
+  var i=0;
+  function next(){
+    if(i>=LINES.length){finishBoot(run);return;}
+    var line=LINES[i++];
       const d=document.createElement('div');
-      d.className='boot-ln'+(line==='TERMINAL DIAGNOSIS PROTOCOL'?' b':'');
-      d.textContent=line||' ';log.appendChild(d);
-    },i*120);
-  });
+      d.className='boot-ln'+(i===1?' b':'');
+    log.appendChild(d);
+    typeCodeElement(d,null,{text:line||' ',run:run,speed:3,cancelable:false}).then(function(){
+      if(log.scrollHeight>log.clientHeight)log.scrollTop=log.scrollHeight;
+      setTimeout(next,18);
+    });
+  }
+  next();
+}
+function finishBoot(run){
+  if(run!==typewriterRun)return;
+  var log=document.getElementById('boot-log');
+  if(log&&!log.querySelector('.boot-locale-line')){
+    var hs=document.createElement('div');
+    hs.className='boot-ln';
+    hs.textContent=currentLang==='PT'?'> cortex-net :: handshake de locale':'> cortex-net :: locale handshake';
+    log.appendChild(hs);
+    var loc=document.createElement('div');
+    loc.className='boot-ln boot-locale-line';
+    var lname=currentLang==='PT'?'pt-BR':'en-US';
+    loc.innerHTML=(currentLang==='PT'?'locale detectado: ':'locale detected: ')
+      +'<span style="color:#fff;">'+lname+'</span>&nbsp;&nbsp;'
+      +'<span class="boot-lang-opt'+(currentLang==='PT'?' active':'')+'" data-l="PT">[ PT ]</span> '
+      +'<span class="boot-lang-opt'+(currentLang==='EN'?' active':'')+'" data-l="EN">[ EN ]</span>';
+    log.appendChild(loc);
+    Array.prototype.forEach.call(loc.querySelectorAll('.boot-lang-opt'),function(o){
+      o.onclick=function(ev){ev.stopPropagation();var l=o.getAttribute('data-l');if(l===currentLang)return;setLang(l);initBoot();};
+    });
+  }
+  if(log&&!log.querySelector('.boot-cursor-line')){
+    var c=document.createElement('div');
+    c.className='boot-ln b boot-cursor-line';
+    c.innerHTML='&gt; <span class="term-cursor"></span>';
+    log.appendChild(c);
+  }
+  if(log&&log.scrollHeight>log.clientHeight)log.scrollTop=log.scrollHeight;
+  var ctx=document.getElementById('boot-context');
+  if(ctx)ctx.style.opacity='1';
 }
 
 function showCodename(){
   show('s-codename');
-  updateCodenameCode();
+  updateCodenameCode(true);
+  typeCodenameCode();
   setTimeout(()=>document.getElementById('codename-inp').focus(),100);
 }
 
 function sanitizeAlias(v){
   return String(v||'').trim().replace(/[^a-zA-Z0-9_]+/g,'').toUpperCase();
 }
-function updateCodenameCode(){
+function updateCodenameCode(allowTyping){
+  if(!allowTyping)typewriterRun++;
   const inp=document.getElementById('codename-inp');
   const pre=document.getElementById('codename-code-preview');
   const out=document.getElementById('codename-output');
   const alias=sanitizeAlias(inp&&inp.value)||'REPLACENAME';
   const nick='nakt-'+alias;
   if(pre){
-    pre.innerHTML='<span class="kw">using</span> System;\n\n'
-      +'<span class="kw">public class</span> REDACTED\n'
-      +'{\n'
-      +'  <span class="kw">public static void</span> Name()\n'
-      +'  {\n'
-      +'    <span class="kw">string</span>[] alias = { <span class="str">"nakt"</span>, <span class="str">"'+escapeHtml(alias)+'"</span> };\n'
-      +'    <span class="kw">var</span> nick = String.Join(<span class="str">"-"</span>, alias);\n\n'
-      +'    Console.WriteLine(nick);\n'
-      +'  }\n'
-      +'}';
+    if(currentLang==='PT'){
+      pre.innerHTML='<span class="kw">usando</span> Sistema;\n\n'
+        +'<span class="kw">classe publica</span> OCULTO\n'
+        +'{\n'
+        +'  <span class="kw">estatico vazio</span> Nome()\n'
+        +'  {\n'
+        +'    <span class="kw">texto</span>[] alias = { <span class="str">"nakt"</span>, <span class="str">"'+escapeHtml(alias)+'"</span> };\n'
+        +'    <span class="kw">var</span> apelido = Texto.Juntar(<span class="str">"-"</span>, alias);\n\n'
+        +'    Console.Escrever(apelido);\n'
+        +'  }\n'
+        +'}';
+    }else{
+      pre.innerHTML='<span class="kw">using</span> System;\n\n'
+        +'<span class="kw">public class</span> REDACTED\n'
+        +'{\n'
+        +'  <span class="kw">public static void</span> Name()\n'
+        +'  {\n'
+        +'    <span class="kw">string</span>[] alias = { <span class="str">"nakt"</span>, <span class="str">"'+escapeHtml(alias)+'"</span> };\n'
+        +'    <span class="kw">var</span> nick = String.Join(<span class="str">"-"</span>, alias);\n\n'
+        +'    Console.WriteLine(nick);\n'
+        +'  }\n'
+        +'}';
+    }
   }
   if(out)out.textContent=nick;
+}
+function typeCodenameCode(){
+  const pre=document.getElementById('codename-code-preview');
+  if(!pre)return;
+  typeCodeElement(pre,pre.innerHTML,{speed:5});
 }
 
 function confirmCodename(){
@@ -1282,27 +1495,97 @@ function confirmCodename(){
 function startQuiz(){renderQuestion(0);}
 
 const QUIZ_TAGS=['mirror.self','risk.witness','memory.truth','loss.object','ethic.love','dark.room','core.phrase','night.question'];
+const QUIZ_TAGS_PT=['espelho.eu','risco.testemunha','memoria.verdade','perda.objeto','etica.amor','sala.escura','frase.nucleo','noite.pergunta'];
 function renderQuizCode(idx,selected){
   const el=document.getElementById('quiz-code');if(!el)return;
   const trace=st.quizTrace||[];
   const scores=st.scores||{};
+  var L=currentLang==='PT';
+  var TAGS=L?QUIZ_TAGS_PT:QUIZ_TAGS;
+  var v_subject=L?'sujeito':'subject';
+  var v_scan=L?'arquetipo.scan.iniciar':'archetype.scan.start';
+  var v_answer=L?'perfil.resposta':'profile.answer';
+  var v_await=L?'// aguardando entrada:':'// awaiting input:';
+  var v_score=L?'pontuacao':'score';
+  var v_redacted=L?'OCULTO':'REDACTED';
+  var v_q=L?'p':'q';
   const parts=[
-    '<div class="quiz-code-line"><span class="quiz-code-dim">var</span> subject = <span class="quiz-code-strong">'+escapeHtml(st.charName||'REDACTED')+'</span>;</div>',
-    '<div class="quiz-code-line">archetype.scan.start(<span class="quiz-code-strong">"'+String(idx+1).padStart(2,'0')+'/08"</span>);</div>'
+    '<div class="quiz-code-line"><span class="quiz-code-dim">var</span> '+v_subject+' = <span class="quiz-code-strong">'+escapeHtml(st.charName||v_redacted)+'</span>;</div>',
+    '<div class="quiz-code-line">'+v_scan+'(<span class="quiz-code-strong">"'+String(idx+1).padStart(2,'0')+'/08"</span>);</div>'
   ];
   trace.slice(-4).forEach(function(a,i){
     const cls=(selected&&i===trace.slice(-4).length-1)?' quiz-code-line new':'quiz-code-line';
-    parts.push('<div class="'+cls.trim()+'">profile.answer(<span class="quiz-code-strong">q'+String(a.idx+1).padStart(2,'0')+'</span>, <span class="quiz-code-strong">"'+escapeHtml(a.key)+'</span>", '+escapeHtml(a.arc)+');</div>');
+    parts.push('<div class="'+cls.trim()+'">'+v_answer+'(<span class="quiz-code-strong">'+v_q+String(a.idx+1).padStart(2,'0')+'</span>, <span class="quiz-code-strong">"'+escapeHtml(a.key)+'</span>", '+escapeHtml(a.arc)+');</div>');
   });
   if(!selected&&idx<QUESTIONS.length){
-    parts.push('<div class="quiz-code-line new"><span class="quiz-code-dim">// awaiting input:</span> '+escapeHtml(QUIZ_TAGS[idx]||('question.'+(idx+1)))+'</div>');
+    parts.push('<div class="quiz-code-line new"><span class="quiz-code-dim">'+v_await+'</span> '+escapeHtml(TAGS[idx]||('question.'+(idx+1)))+'</div>');
   }
-  parts.push('<div class="quiz-code-line"><span class="quiz-code-dim">score</span> = { N:'+Number(scores.Naive||0)+', O:'+Number(scores.Orphan||0)+', B:'+Number(scores.Breaker||0)+', H:'+Number(scores.Hollow||0)+', S:'+Number(scores.Sage||0)+', Or:'+Number(scores.Oracle||0)+' };</div>');
+  parts.push('<div class="quiz-code-line"><span class="quiz-code-dim">'+v_score+'</span> = { N:'+Number(scores.Naive||0)+', O:'+Number(scores.Orphan||0)+', B:'+Number(scores.Breaker||0)+', H:'+Number(scores.Hollow||0)+', S:'+Number(scores.Sage||0)+', Or:'+Number(scores.Oracle||0)+' };</div>');
   el.innerHTML=parts.join('');
+  var lines=[].slice.call(el.querySelectorAll('.quiz-code-line'));
+  if(selected){
+    lines.forEach(function(line){line.classList.add('code-typed');});
+    var fresh=lines.filter(function(line){return line.classList.contains('new');});
+    fresh.forEach(function(line){line.dataset.fullHtml=line.innerHTML;});
+    typeCodeLines(fresh,{speed:4,delay:6});
+  }else{
+    lines.forEach(function(line){line.dataset.fullHtml=line.innerHTML;});
+    typeCodeLines(lines,{speed:4,delay:6});
+  }
 }
 
+function buildQuizAmbient(idx){
+  var el=document.getElementById('quiz-ambient');if(!el)return;
+  if(reducedMotion()){el.innerHTML='';return;}
+  var qn=String(idx+1).padStart(2,'0');
+  var L=currentLang==='PT';
+  var frags=L?[
+    'cortex.net::ouvir()',
+    'se(sinal>=5) sync()',
+    'scan.arquetipo(p'+qn+')',
+    'perfil.empilhar(resposta)',
+    'rotear(PAMYEL,TITA)',
+    'marcar(DESPERTO)',
+    'reescrita=="FALHOU"',
+    'd8 -> rolar()',
+    'mem.fragmento[0x'+(0xA0+idx).toString(16).toUpperCase()+']',
+    'limite := fixo',
+    '01001101 01100101',
+    'enquanto(vivo){adaptar()}',
+    'preservar(residuo)',
+    'sujeito.sinal=0',
+    'antidoto.inserir()',
+    'enfileirar(ARQUIVO_ECO)'
+  ]:[
+    'cortex.net::listen()',
+    'if(signal>=5) sync()',
+    'scan.archetype(q'+qn+')',
+    'profile.push(answer)',
+    'route(PAMYEL,TITAN)',
+    'flag(DESPERTO)',
+    'rewrite=="FAILED"',
+    'd8 -> roll()',
+    'mem.fragment[0x'+(0xA0+idx).toString(16).toUpperCase()+']',
+    'threshold := fixed',
+    '01001101 01100101',
+    'while(alive){adapt()}',
+    'preserve(residue)',
+    'subject.signal=0',
+    'antidote.insert()',
+    'queue(ECHO_FILE)'
+  ];
+  var html='';
+  for(var i=0;i<frags.length;i++){
+    var top=(i*(100/frags.length)+((idx*7)%9)+1).toFixed(1);
+    var left=((i*37+idx*13)%86);
+    var rot=((i%2)?-1:1)*((i*5+idx*3)%6);
+    html+='<span style="top:'+top+'%;left:'+left+'%;transform:rotate('+rot+'deg);">'+frags[i]+'</span>';
+  }
+  el.innerHTML=html;
+}
 function renderQuestion(idx){
   show('s-quiz');
+  buildQuizAmbient(idx);
   const q=QUESTIONS[idx];
   const pct=((idx)/8)*100;
   document.getElementById('quiz-bar').style.width=pct+'%';
@@ -1340,7 +1623,7 @@ function showWeaponScreen(){
   const btn=document.getElementById('weapon-confirm');btn.style.opacity='0.3';
   WEAPONS.forEach((w,i)=>{
     const d=document.createElement('div');d.className='weapon-opt';
-    d.innerHTML=`<div class="weapon-name">${w.name.toUpperCase()}</div><div class="weapon-type">${weaponType(w)}</div>`;
+    d.innerHTML=`<div class="weapon-name">${PN(w.name).toUpperCase()}</div><div class="weapon-type">${weaponType(w)}</div>`;
     d.onclick=()=>{
       document.querySelectorAll('.weapon-opt').forEach(x=>x.classList.remove('selected'));
       d.classList.add('selected');st.weaponIdx=i;btn.style.opacity='1';
@@ -1360,9 +1643,9 @@ function revealArchetype(){
   const winner=Object.keys(st.scores).reduce((a,b)=>st.scores[a]>=st.scores[b]?a:b);
   st.arcResult=winner;const arc=ARCHETYPES[winner];
   const nameEl=document.getElementById('a-name');
-  nameEl.textContent=arc.name;nameEl.style.animation='none';
+  nameEl.textContent=PN(arc.name);nameEl.style.animation='none';
   requestAnimationFrame(()=>{nameEl.style.animation='';});
-  document.getElementById('a-attrs').innerHTML=Object.entries(arc.attrs).map(([k,v])=>`<div class="arc-attr"><b>${k} +${v}</b></div>`).join('');
+  document.getElementById('a-attrs').innerHTML=Object.entries(arc.attrs).map(([k,v])=>`<div class="arc-attr"><b>${attrLabel(k)} +${v}</b></div>`).join('');
   document.getElementById('a-desc').textContent=tdata(arc,'desc');
   document.getElementById('a-passive').textContent=tdata(arc,'passive');
   buildClassGrid();
@@ -1374,7 +1657,7 @@ function buildClassGrid(){
   Object.entries(CLASSES).forEach(([name,cls])=>{
     const d=document.createElement('div');d.className='cls-card';
     d.onclick=()=>openClassDetail(name);
-    d.innerHTML=`<div>${CLASS_ICONS[name]||''}</div><div class="cls-card-info"><div class="cls-cname">${name.toUpperCase()}</div><div class="cls-crole">${tdata(cls,'role')}</div><div class="cls-csig">// ${tdata(cls,'sig')}</div></div>`;
+    d.innerHTML=`<div>${CLASS_ICONS[name]||''}</div><div class="cls-card-info"><div class="cls-cname">${PN(name).toUpperCase()}</div><div class="cls-crole">${tdata(cls,'role')}</div><div class="cls-csig">// ${tdata(cls,'sig')}</div></div>`;
     grid.appendChild(d);
   });
 }
@@ -1393,7 +1676,7 @@ function buildExpandableAbilities(abilities,container){
   abilities.forEach(a=>{
     const block=document.createElement('div');block.className='ab-block';
     const header=document.createElement('div');header.className='ab-header';
-    const nameEl=document.createElement('span');nameEl.className='ab-name-lbl';nameEl.textContent=a.name.toUpperCase();
+    const nameEl=document.createElement('span');nameEl.className='ab-name-lbl';nameEl.textContent=PN(a.name).toUpperCase();
     const toggle=document.createElement('span');toggle.className='ab-toggle';toggle.textContent='[+]';
     header.appendChild(nameEl);header.appendChild(toggle);
     const body=document.createElement('div');body.className='ab-body collapsed';body.innerHTML=formatAbilityDesc(tdata(a,'desc'));
@@ -1407,12 +1690,12 @@ function openClassDetail(name){
   const arc=ARCHETYPES[st.arcResult];
   const threshold=cls.thr;
   document.getElementById('cd-icon').innerHTML=CLASS_ICONS[name]||'';
-  document.getElementById('cd-name').textContent=name.toUpperCase();
+  document.getElementById('cd-name').textContent=PN(name).toUpperCase();
   document.getElementById('cd-role').textContent=tdata(cls,'role');
   const dmgLabel=currentLang==='PT'?'RELÓGIO':'DMG CLOCK';
   const thrLabel=currentLang==='PT'?'LIMITE':'THRESHOLD';
   document.getElementById('cd-stats').innerHTML=`<div class="cls-stat"><div class="cls-stat-label">${dmgLabel}</div><div class="cls-stat-val">12</div></div><div class="cls-stat"><div class="cls-stat-label">${thrLabel}</div><div class="cls-stat-val">${threshold}</div></div>`;
-  document.getElementById('cd-sig').textContent='Signature: '+tdata(cls,'sig');
+  document.getElementById('cd-sig').textContent=(currentLang==='PT'?'Assinatura: ':'Signature: ')+tdata(cls,'sig');
   const abCont=document.getElementById('cd-abilities');abCont.innerHTML='';
   buildExpandableAbilities(cls.abilities,abCont);
   show('s-cls-detail');
@@ -1426,7 +1709,7 @@ function showFactionScreen(){
   const btn=document.getElementById('faction-confirm');btn.style.opacity='0.3';
   Object.entries(FACTIONS).forEach(([key,f])=>{
     const d=document.createElement('div');d.className='weapon-opt';
-    d.innerHTML=`<div class="weapon-name">${f.name}</div><div class="weapon-type">${tdata(f,'philosophy')} · ${f.leader}</div><div style="font-size:11px;color:rgba(0,255,136,0.5);margin-top:8px;line-height:1.6;">${tdata(f,'desc')}</div>`;
+    d.innerHTML=`<div class="weapon-name">${PN(f.name)}</div><div class="weapon-type">${tdata(f,'philosophy')} · ${PN(f.leader)}</div><div style="font-size:11px;color:rgba(0,255,136,0.5);margin-top:8px;line-height:1.6;">${tdata(f,'desc')}</div>`;
     d.onclick=()=>{
       document.querySelectorAll('#faction-opts .weapon-opt').forEach(x=>x.classList.remove('selected'));
       d.classList.add('selected');st.factionResult=key;btn.style.opacity='1';
@@ -1443,9 +1726,9 @@ function confirmFaction(){
 function updateIdentityText(){
   const arc=ARCHETYPES[st.arcResult];
   if(!arc)return;
-  const arcLine=arc.name+(st.factionResult?' // '+st.factionResult:'');
+  const arcLine=PN(arc.name)+(st.factionResult?' // '+PN(st.factionResult):'');
   const arcEl=document.getElementById('sh-arc');if(arcEl)arcEl.textContent=arcLine;
-  const clsEl=document.getElementById('sh-class-name');if(clsEl)clsEl.textContent=(st.classResult||'').toUpperCase();
+  const clsEl=document.getElementById('sh-class-name');if(clsEl)clsEl.textContent=PN(st.classResult||'').toUpperCase();
   const subEl=document.getElementById('sh-threshold-sub');if(subEl)subEl.textContent=currentLang==='PT'?'VALOR FIXO':'FIXED VALUE';
 }
 
@@ -1459,7 +1742,7 @@ function buildSheet(){
 
   document.getElementById('sh-name').textContent=st.charName;
   updateIdentityText();
-  document.getElementById('sh-id').innerHTML=`<div class="unit-id-label">UNIT ID</div><div class="unit-id-val">${id}</div><div class="unit-id-save">${currentLang==='PT'?'SALVE ESTE CÓDIGO':'SAVE THIS CODE'}</div>`;
+  document.getElementById('sh-id').innerHTML=`<div class="unit-id-label">${currentLang==='PT'?'ID DA UNIDADE':'UNIT ID'}</div><div class="unit-id-val">${id}</div><div class="unit-id-save">${currentLang==='PT'?'SALVE ESTE CÓDIGO':'SAVE THIS CODE'}</div>`;
   document.getElementById('sh-cls-icon').innerHTML=CLASS_ICONS[st.classResult]||'';
 
   // attrs + signal
@@ -1467,7 +1750,7 @@ function buildSheet(){
   const attrGroup=document.createElement('div');attrGroup.className='attr-group';
   Object.entries(arc.attrs).forEach(([k,v])=>{
     const pill=document.createElement('div');pill.className='attr-pill';
-    pill.innerHTML=`<span class="attr-key">${k}</span><span class="attr-val">+${v}</span>`;
+    pill.innerHTML=`<span class="attr-key">${attrLabel(k)}</span><span class="attr-val">+${v}</span>`;
     attrGroup.appendChild(pill);
   });
   attrsRow.appendChild(attrGroup);
@@ -1475,17 +1758,17 @@ function buildSheet(){
   // signal + overdrive in attrs-row
   const signalGroup=document.createElement('div');signalGroup.className='status-group signal-group';
   const sdiv=document.createElement('div');sdiv.className='signal-divider';signalGroup.appendChild(sdiv);
-  const slabel=document.createElement('div');slabel.className='signal-label-sm';slabel.textContent='SIGNAL';slabel.style.cursor='pointer';slabel.title='inspect';slabel.onclick=function(ev){inspectTerm('SIGNAL',ev);};signalGroup.appendChild(slabel);
+  const slabel=document.createElement('div');slabel.className='signal-label-sm';slabel.textContent=currentLang==='PT'?'SINAL':'SIGNAL';slabel.style.cursor='pointer';slabel.title='inspect';slabel.onclick=function(ev){inspectTerm('SIGNAL',ev);};signalGroup.appendChild(slabel);
   const spips=document.createElement('div');spips.className='signal-pips';spips.id='sh-signal';
   for(let i=1;i<=5;i++){const p=document.createElement('div');p.className='sig-pip';p.textContent=i;p.onclick=()=>setSignal(i);spips.appendChild(p);}
   signalGroup.appendChild(spips);
-  const syncEl=document.createElement('div');syncEl.className='sync-badge hidden';syncEl.id='sh-sync';syncEl.textContent='⚠ SYNC';attrsRow.appendChild(syncEl);
+  const syncEl=document.createElement('div');syncEl.className='sync-badge hidden';syncEl.id='sh-sync';syncEl.textContent=currentLang==='PT'?'⚠ SINC':'⚠ SYNC';attrsRow.appendChild(syncEl);
   signalGroup.appendChild(syncEl);
   attrsRow.appendChild(signalGroup);
   // overdrive group in attrs-row
   const overdriveGroup=document.createElement('div');overdriveGroup.className='status-group overdrive-group';
   const oddiv=document.createElement('div');oddiv.className='signal-divider';overdriveGroup.appendChild(oddiv);
-  const odlabel=document.createElement('div');odlabel.className='overdrive-label';odlabel.textContent='OVERDRIVE';odlabel.style.cursor='pointer';odlabel.title='inspect';odlabel.onclick=function(ev){inspectTerm('OVERDRIVE',ev);};overdriveGroup.appendChild(odlabel);
+  const odlabel=document.createElement('div');odlabel.className='overdrive-label';odlabel.textContent=currentLang==='PT'?'SOBRECARGA':'OVERDRIVE';odlabel.style.cursor='pointer';odlabel.title='inspect';odlabel.onclick=function(ev){inspectTerm('OVERDRIVE',ev);};overdriveGroup.appendChild(odlabel);
   const odWrap=document.createElement('div');odWrap.id='sh-od-wrap';odWrap.className='signal-pips';overdriveGroup.appendChild(odWrap);
   attrsRow.appendChild(overdriveGroup);
   st.overdrive=st.overdrive||0;
@@ -1507,7 +1790,7 @@ function buildSheet(){
   const wBlock=document.getElementById('sh-weapon-block');wBlock.innerHTML='';
   const wEl=document.createElement('div');wEl.className='ab-block';
   const wHeader=document.createElement('div');wHeader.className='ab-header';
-  const wName=document.createElement('span');wName.className='ab-name-lbl';wName.textContent=w.name.toUpperCase();
+  const wName=document.createElement('span');wName.className='ab-name-lbl';wName.textContent=PN(w.name).toUpperCase();
   const wMeta=document.createElement('span');wMeta.style.cssText='font-size:11px;color:rgba(0,255,136,0.38);font-family:Share Tech Mono,monospace;margin-left:8px;';wMeta.textContent=weaponType(w)+' · DMG '+w.damage;
   const wToggle=document.createElement('span');wToggle.className='ab-toggle';wToggle.textContent='[+]';
   wHeader.appendChild(wName);wHeader.appendChild(wMeta);wHeader.appendChild(wToggle);
@@ -1534,7 +1817,7 @@ function buildOwned(){
   st.owned.forEach(function(name,idx){
     var chip=document.createElement('div');
     chip.style.cssText='border:1px solid rgba(0,255,136,0.3);background:rgba(0,255,136,0.05);padding:6px 10px;font-size:11px;color:#fff;display:flex;align-items:center;gap:8px;clip-path:polygon(0 0,calc(100% - 5px) 0,100% 5px,100% 100%,5px 100%,0 calc(100% - 5px));';
-    var lbl=document.createElement('span');lbl.textContent=name;chip.appendChild(lbl);
+    var lbl=document.createElement('span');lbl.textContent=PN(name);chip.appendChild(lbl);
     var x=document.createElement('span');x.textContent='✕';x.style.cssText='cursor:pointer;color:rgba(255,60,60,0.75);font-size:10px;';
     x.onclick=function(){st.owned.splice(idx,1);buildOwned();buildInventoryUI(st.inventory);buildMementoSlots();persistSheet();};
     chip.appendChild(x);el.appendChild(chip);
@@ -1572,12 +1855,12 @@ function buildShop(){
   CONTRABAND.forEach(function(group){
     if(group.faction&&group.faction!==st.factionResult)return;
     if(marketFilter!=='ALL'&&marketFilter!==group.cat)return;
-    var label=document.createElement('div');label.className='ab-section-label';label.textContent='// '+catLabel(group.cat)+(group.faction?' // '+group.faction:'');el.appendChild(label);
+    var label=document.createElement('div');label.className='ab-section-label';label.textContent='// '+catLabel(group.cat)+(group.faction?' // '+PN(group.faction):'');el.appendChild(label);
     group.items.forEach(function(it){
       var row=document.createElement('div');
       row.className='shop-card';
       var head=document.createElement('div');head.className='shop-card-head';
-      var nm=document.createElement('div');nm.className='ab-name-lbl';nm.textContent=it.name.toUpperCase();
+      var nm=document.createElement('div');nm.className='ab-name-lbl';nm.textContent=PN(it.name).toUpperCase();
       var right=document.createElement('div');right.style.cssText='display:flex;align-items:center;gap:10px;flex-shrink:0;';
       var price=document.createElement('span');price.className='shop-price';price.textContent=it.price+'R';
       var buy=document.createElement('button');buy.className='portrait-btn';buy.style.cssText+=';flex:none;padding:6px 12px;';buy.textContent=currentLang==='PT'?'[ COMPRAR ]':'[ BUY ]';
@@ -1591,7 +1874,7 @@ function buildShop(){
 function splitMementoDesc(it){
   var raw=tdata(it,'desc')||'';
   var first=raw.split('.')[0]||'';
-  if(/^(Beat|Countershot)/i.test(first)){
+  if(/^(Beat|Countershot|Ação|Reação)/i.test(first)){
     return {meta:first.replace(/\s*\/\s*/g,' · '),body:raw.slice(first.length+1).trim()};
   }
   return {meta:'',body:raw};
@@ -1614,9 +1897,9 @@ function buildMementoSlots(){
     sel.className='memento-select';
     var mk=function(v,t){var o=document.createElement('option');o.value=v;o.textContent=t;return o;};
     sel.appendChild(mk('',currentLang==='PT'?'(vazio)':'(empty)'));
-    var seen={};owned.forEach(function(n){if(!seen[n]){seen[n]=1;sel.appendChild(mk(n,n));}});
+    var seen={};owned.forEach(function(n){if(!seen[n]){seen[n]=1;sel.appendChild(mk(n,PN(n)));}});
     var cur=st.mementoSlots[idx]||'';
-    if(cur&&!seen[cur])sel.appendChild(mk(cur,cur));
+    if(cur&&!seen[cur])sel.appendChild(mk(cur,PN(cur)));
     sel.value=cur;
     var descEl=document.createElement('div');
     descEl.className='memento-desc';
@@ -1625,7 +1908,7 @@ function buildMementoSlots(){
       var it=findItem(name);
       if(it){
         var parts=splitMementoDesc(it);
-        descEl.innerHTML='<div class="memento-desc-title">'+it.name.toUpperCase()+'</div>'+(parts.meta?'<div class="memento-desc-meta">'+escapeHtml(parts.meta)+'</div>':'')+formatAbilityDesc(parts.body);
+        descEl.innerHTML='<div class="memento-desc-title">'+PN(it.name).toUpperCase()+'</div>'+(parts.meta?'<div class="memento-desc-meta">'+escapeHtml(parts.meta)+'</div>':'')+formatAbilityDesc(parts.body);
       }else{
         descEl.innerHTML='';
       }
@@ -1694,7 +1977,7 @@ function buildSuitModules(slotEl){
     var chip=document.createElement('button');
     chip.type='button';
     chip.className='suit-module-chip'+(active?' active':'')+(owned?'':' locked');
-    chip.textContent=name.replace(' Module','');
+    chip.textContent=currentLang==='PT'?PN(name).replace('Módulo ',''):name.replace(' Module','');
     chip.onclick=function(e){
       e.stopPropagation();
       if(!owned)return;
@@ -1730,8 +2013,8 @@ function buildInventoryUI(currentInv){
       var mk=function(v,tx){var o=document.createElement('option');o.value=v;o.textContent=tx;return o;};
       sel.appendChild(mk('','('+emptyLabel()+')'));
       var wopts=slotOptions(slotName);var wseen={};
-      wopts.forEach(function(n){if(!wseen[n]){wseen[n]=1;sel.appendChild(mk(n,n));}});
-      if(val&&!wseen[val])sel.appendChild(mk(val,val));
+      wopts.forEach(function(n){if(!wseen[n]){wseen[n]=1;sel.appendChild(mk(n,PN(n)));}});
+      if(val&&!wseen[val])sel.appendChild(mk(val,PN(val)));
       sel.value=val||'';
       sel.onchange=function(){
         st.inventory[slotName]=sel.value;
@@ -1746,7 +2029,7 @@ function buildInventoryUI(currentInv){
         const upVal=st.upgrades[slotName]||'';
         const upItem=document.createElement('div');
         upItem.style.fontSize='10px';
-        if(upVal){upItem.className='inv-slot-item';upItem.textContent=upVal;}
+        if(upVal){upItem.className='inv-slot-item';upItem.textContent=PN(upVal);}
         else{upItem.className='inv-slot-item empty';upItem.textContent=noneLabel();}
         slotEl.appendChild(upLab);slotEl.appendChild(upItem);
         upItem.onclick=(e)=>{e.stopPropagation();editUpgrade(slotEl,slotName,upItem,upVal);};
@@ -1756,7 +2039,7 @@ function buildInventoryUI(currentInv){
       if(slotName==='SUIT')buildSuitModules(slotEl);
     }else{
       const item=document.createElement('div');
-      if(isEquipped){item.className='inv-slot-item';item.textContent=val;}
+      if(isEquipped){item.className='inv-slot-item';item.textContent=PN(val);}
       else{item.className='inv-slot-item empty';item.textContent=emptyLabel();}
       slotEl.appendChild(item);
       slotEl.onclick=()=>editSlot(slotEl,slotName,item,val);
@@ -1782,8 +2065,8 @@ function editSlot(slotEl,slotName,itemEl,currentVal){
   sel.style.cssText='width:100%;background:#0a0f0c;border:none;outline:none;color:#00ff88;font-family:"Share Tech Mono",monospace;font-size:11px;padding:0;';
   var mk=function(v,t){var o=document.createElement('option');o.value=v;o.textContent=t;return o;};
   sel.appendChild(mk('','('+emptyLabel()+')'));
-  var seen={};opts.forEach(function(n){if(!seen[n]){seen[n]=1;sel.appendChild(mk(n,n));}});
-  if(currentVal&&!seen[currentVal])sel.appendChild(mk(currentVal,currentVal));
+  var seen={};opts.forEach(function(n){if(!seen[n]){seen[n]=1;sel.appendChild(mk(n,PN(n)));}});
+  if(currentVal&&!seen[currentVal])sel.appendChild(mk(currentVal,PN(currentVal)));
   sel.value=currentVal||'';
   itemEl.replaceWith(sel);sel.focus();
   var done=false;
@@ -1812,8 +2095,8 @@ function editUpgrade(slotEl,slotName,upItemEl,currentVal){
   sel.style.cssText='width:100%;background:#0a0f0c;border:none;outline:none;color:#00ff88;font-family:"Share Tech Mono",monospace;font-size:10px;padding:0;';
   var mk=function(v,t){var o=document.createElement('option');o.value=v;o.textContent=t;return o;};
   sel.appendChild(mk('',noneLabel()));
-  var seen={};opts.forEach(function(n){if(!seen[n]){seen[n]=1;sel.appendChild(mk(n,n));}});
-  if(currentVal&&!seen[currentVal])sel.appendChild(mk(currentVal,currentVal));
+  var seen={};opts.forEach(function(n){if(!seen[n]){seen[n]=1;sel.appendChild(mk(n,PN(n)));}});
+  if(currentVal&&!seen[currentVal])sel.appendChild(mk(currentVal,PN(currentVal)));
   sel.value=currentVal||'';
   upItemEl.replaceWith(sel);sel.focus();
   var done=false;
@@ -1896,7 +2179,7 @@ function buildEchoResource(){
   el.style.display='block';
   const label=document.createElement('div');
   label.className='block-label';
-  label.textContent='// TALLY';
+  label.textContent=currentLang==='PT'?'// CONTAGEM':'// TALLY';
   const row=document.createElement('div');
   row.className='resource-pips';
   for(let i=1;i<=3;i++){
@@ -1944,7 +2227,7 @@ function buildArmorTracker(){
   el.style.display='block';
   st.armorUsed=Math.max(0,Math.min(st.armorUsed||0,max));
   const head=document.createElement('div');head.className='armor-tracker-head';
-  const name=document.createElement('div');name.className='armor-name';name.textContent=armor.toUpperCase();
+  const name=document.createElement('div');name.className='armor-name';name.textContent=PN(armor).toUpperCase();
   const note=document.createElement('div');note.className='armor-note';note.textContent=(max-(st.armorUsed||0))+' / '+max+' '+(currentLang==='PT'?'ABSORÇÃO':'ABSORB');
   head.appendChild(name);head.appendChild(note);
   const pips=document.createElement('div');pips.className='armor-pips';
@@ -2117,7 +2400,7 @@ function applyUnit(d,img){
   if(d.inventory){st.inventory=d.inventory;buildInventoryUI(d.inventory);}
   st.clockMarked=d.clock||0;st.implantUsed=d.implantUsed||0;st.implantIdx=d.implantIdx||0;st.implantSlots=d.implantSlots||0;st.implantAbsorb=d.implantAbsorb||0;st.tally=d.tally||0;st.armorUsed=d.armorUsed||0;
   buildClock();buildImplantSlots();buildEchoResource();buildArmorTracker();renderRelics();buildOwned();buildShop();buildMementoSlots();
-  document.getElementById('sh-id').innerHTML='<div class="unit-id-label">UNIT ID</div><div class="unit-id-val">'+st.currentId+'</div><div class="unit-id-save">'+(currentLang==='PT'?'SALVE ESTE CÓDIGO':'SAVE THIS CODE')+'</div>';
+  document.getElementById('sh-id').innerHTML='<div class="unit-id-label">'+(currentLang==='PT'?'ID DA UNIDADE':'UNIT ID')+'</div><div class="unit-id-val">'+st.currentId+'</div><div class="unit-id-save">'+(currentLang==='PT'?'SALVE ESTE CÓDIGO':'SAVE THIS CODE')+'</div>';
   if(d.signal&&d.signal>0)setSignal(d.signal);
   st.overdrive=d.overdrive||0;buildOverdrive();
   if(d.notes)document.getElementById('sh-notes').value=d.notes;
@@ -2286,16 +2569,65 @@ LANG.PT.weapon_title='// SELEÇÃO DE ARMA';
 LANG.PT.weapon_sub='Escolha sua arma assinatura.';
 LANG.PT.weapon_confirm='CONFIRMAR ARMA';
 LANG.PT.lib_nav_h='// NAVEGAÇÃO';
+/* === TRAD PT-BR: chaves novas (boot, intro, codinome, telas) === */
+Object.assign(LANG.EN,{
+  bootctx_1:'ANOMALOUS HANDSHAKE',bootctx_2:'TITAN INTERIOR / ACTIVE',bootctx_subj:'SUBJECT',bootctx_3:'AWAKENING PROTOCOL READY',
+  btn_run:'[ RUN ]',
+  intro_sub:'DESPERTO CLASSIFICATION PROTOCOL v.4.1',
+  intro_st1:'CORTEX-NET SIGNAL: ANOMALY DETECTED',intro_st2:'WIREBRAIN REWRITE: FAILED',intro_st3:'DESPERTO STATUS: CONFIRMED',
+  intro_h1:'T-Corp controls your perceptions, weaving your reality.',
+  intro_h2:'But you, somehow, broke the Protocol.',
+  intro_p:'They tried to rewrite you. It couldn’t. And what you became instead is what this terminal is here to find out.',
+  intro_desperto:'You’re now Desperto.',
+  intro_antidote:'Prepare to insert the Antidote.',
+  intro_hint:'// 8 QUESTIONS // ARCHETYPE // ECHO // FACTION // UNIT ID',
+  cn_sub:'IDENTIFICATION REQUIRED',cn_label:'Before the scan begins, the system needs to identify you.',
+  cn_ph:'your codename',cn_hint:'// TYPE AND PRESS CONFIRM',cn_output:'// OUTPUT:',cn_confirm:'CONFIRM',
+  arc_scan_label:'// SCAN COMPLETE: NEURAL PATTERN IDENTIFIED',
+  echo_kicker:'// ECHO SELECTION',cd_abilities_hint:'// ABILITIES: TAP TO EXPAND',cd_confirm:'CONFIRM ECHO',
+  faction_kicker:'// FACTION ALIGNMENT',
+  portrait_tap:'TAP TO ADD PHOTO',portrait_gallery:'select from gallery',portrait_change:'[ CHANGE ]',portrait_reset:'[ RESET ]',
+  market_h:'// CONTRABAND REGISTRY'
+});
+Object.assign(LANG.PT,{
+  bootctx_1:'APERTO DE MÃO ANÔMALO',bootctx_2:'INTERIOR DO TITÃ / ATIVO',bootctx_subj:'SUJEITO',bootctx_3:'PROTOCOLO DE DESPERTAR PRONTO',
+  btn_run:'[ EXECUTAR ]',
+  intro_sub:'PROTOCOLO DE CLASSIFICAÇÃO DESPERTO v.4.1',
+  intro_st1:'SINAL DA CORTEX-NET: ANOMALIA DETECTADA',intro_st2:'REESCRITA DO WIREBRAIN: FALHOU',intro_st3:'ESTADO DESPERTO: CONFIRMADO',
+  intro_h1:'A T-Corp controla o que você percebe, tecendo a sua realidade.',
+  intro_h2:'Mas você, de algum jeito, quebrou o Protocolo.',
+  intro_p:'Tentaram te reescrever. Não conseguiram. E o que você se tornou no lugar é o que este terminal existe para descobrir.',
+  intro_desperto:'Agora você é Desperto.',
+  intro_antidote:'Prepare-se para inserir o Antídoto.',
+  intro_hint:'// 8 PERGUNTAS // ARQUÉTIPO // ECO // FACÇÃO // UNIT ID',
+  cn_sub:'IDENTIFICAÇÃO NECESSÁRIA',cn_label:'Antes de o scan começar, o sistema precisa saber quem é você.',
+  cn_ph:'seu codinome',cn_hint:'// DIGITE E TOQUE EM CONFIRMAR',cn_output:'// SAÍDA:',cn_confirm:'CONFIRMAR',
+  arc_scan_label:'// SCAN COMPLETO: PADRÃO NEURAL IDENTIFICADO',
+  echo_kicker:'// SELEÇÃO DE ECO',cd_abilities_hint:'// HABILIDADES: TOQUE PARA EXPANDIR',cd_confirm:'CONFIRMAR ECO',
+  faction_kicker:'// ALINHAMENTO DE FACÇÃO',
+  portrait_tap:'TOQUE PARA ADICIONAR FOTO',portrait_gallery:'escolha da galeria',portrait_change:'[ TROCAR ]',portrait_reset:'[ LIMPAR ]',
+  market_h:'// REGISTRO DE CONTRABANDO'
+});
 function t(k){return (LANG[currentLang]&&LANG[currentLang][k])||LANG.EN[k]||k;}
 function tdata(obj,field){if(currentLang==='PT'){var pk=field+'_pt';if(obj&&obj[pk])return obj[pk];}return obj&&obj[field]||'';}
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
-function detectLang(){try{var s=localStorage.getItem('bc_lang');if(s==='EN'||s==='PT')return s;}catch(e){}return (navigator.language||'en').toLowerCase().indexOf('pt')===0?'PT':'EN';}
+function detectLang(){
+  try{var s=localStorage.getItem('bc_lang');if(s==='EN'||s==='PT')return s;}catch(e){}
+  var n=((navigator.language||navigator.userLanguage||(navigator.languages&&navigator.languages[0])||'en')+'').toLowerCase();
+  return n.indexOf('pt')===0?'PT':'EN';
+}
 function setLang(l){currentLang=(l==='PT')?'PT':'EN';try{localStorage.setItem('bc_lang',currentLang);}catch(e){}applyLang();}
 function applyLang(){
   document.documentElement.lang=currentLang==='PT'?'pt-BR':'en';
   document.querySelectorAll('[data-i18n]').forEach(function(el){el.textContent=t(el.getAttribute('data-i18n'));});
   document.querySelectorAll('.glitch[data-i18n]').forEach(function(el){el.setAttribute('data-text',el.textContent);});
   document.querySelectorAll('[data-i18n-ph]').forEach(function(el){el.setAttribute('placeholder',t(el.getAttribute('data-i18n-ph')));});
+  if(typeof renderIntroCode==='function'){
+    var _si=document.getElementById('s-intro');
+    if(_si&&!_si.classList.contains('hidden')&&typeof animateIntroCode==='function')animateIntroCode();
+    else renderIntroCode();
+  }
+  if(typeof updateCodenameCode==='function'){var _sc=document.getElementById('s-codename');if(_sc&&!_sc.classList.contains('hidden'))updateCodenameCode(false);}
   if(typeof buildLibTerms==='function')buildLibTerms();
   if(typeof renderLibraryFirst==='function')renderLibraryFirst();
   if(typeof renderLibraryReference==='function')renderLibraryReference();
@@ -2315,7 +2647,7 @@ function applyLang(){
       if(_wb){_wb.innerHTML='';
         var _wEl=document.createElement('div');_wEl.className='ab-block';
         var _wH=document.createElement('div');_wH.className='ab-header';
-        var _wN=document.createElement('span');_wN.className='ab-name-lbl';_wN.textContent=_w.name.toUpperCase();
+        var _wN=document.createElement('span');_wN.className='ab-name-lbl';_wN.textContent=PN(_w.name).toUpperCase();
         var _wM=document.createElement('span');_wM.style.cssText='font-size:11px;color:rgba(0,255,136,0.38);font-family:Share Tech Mono,monospace;margin-left:8px;';_wM.textContent=weaponType(_w)+' · DMG '+_w.damage;
         var _wT=document.createElement('span');_wT.className='ab-toggle';_wT.textContent='[+]';
         _wH.appendChild(_wN);_wH.appendChild(_wM);_wH.appendChild(_wT);
@@ -2329,7 +2661,7 @@ function applyLang(){
     buildArmorTracker();
     buildInventoryUI(st.inventory||{});
     updateIdentityText();
-    if(st.currentId)document.getElementById('sh-id').innerHTML='<div class="unit-id-label">UNIT ID</div><div class="unit-id-val">'+st.currentId+'</div><div class="unit-id-save">'+(currentLang==='PT'?'SALVE ESTE CÓDIGO':'SAVE THIS CODE')+'</div>';
+    if(st.currentId)document.getElementById('sh-id').innerHTML='<div class="unit-id-label">'+(currentLang==='PT'?'ID DA UNIDADE':'UNIT ID')+'</div><div class="unit-id-val">'+st.currentId+'</div><div class="unit-id-save">'+(currentLang==='PT'?'SALVE ESTE CÓDIGO':'SAVE THIS CODE')+'</div>';
   }
 }
 
@@ -2903,14 +3235,156 @@ function dismissOrient(){
 }
 function copyCodeAndDismiss(){copyCode();dismissOrient();}
 function restart(){show('s-intro');}
+function polishPortugueseConsistency(){
+  Object.assign(LANG.PT,{
+    market_relics:'RELIC',
+    market_r_note:'Relic (R) é obtido em missões concluídas, trabalhos de Facção e recursos recuperados. Ajuste o saldo conforme o Narrador conceder.',
+    weapon_sub:'Escolha sua arma de assinatura.',
+    ctx_weapon_text:'A primeira arma é gratuita. Escolha a arma que combina com a sua abordagem.',
+    j_story_h:'Quem era você antes da falha do Signal?',
+    arch_next_text:'Seu Arquétipo foi fixado. Abra o arquivo de Eco que combina com a forma como este Desperto se move, luta, repara, se oculta ou rompe a Cena.',
+    sh_stash:'// INVENTÁRIO: ADQUIRIDOS'
+  });
+  INSPECT.PT={
+    'SIGNAL':'Pressão da Cortex-Net sobre o sistema nervoso. Falhas em ações arriscadas geralmente adicionam +1 Signal. Em 5, acontece um Sync Event por 1 Shot, depois Signal volta para 0.',
+    'THRESHOLD':'Limite defensivo fixo, definido pelo Eco. Inimigos rolam contra este valor ao atacar ou afetar você. Não some Atributo ao Limite da ficha.',
+    'DAMAGE CLOCK':'Trilha de dano fixa com 12 segmentos. Armadura absorve antes da marcação. Um Relógio cheio tira o personagem da Cena.',
+    'OVERDRIVE':'Recurso do grupo de 0 a 5. Críticos bem-sucedidos aumentam Overdrive. Ele reseta ao fim da Sessão e permanece em 5 até ser gasto.',
+    'EQUIPMENT':'Equipe até 2 Armas, 1 Armadura, 1 Traje e 2 Implantes. Módulos de expedição acoplam ao Traje e exigem Expedition Suit equipado.',
+    'BEAT':'Ação significativa dentro do seu Shot.',
+    'SHOT':'Momento de foco de um personagem. Shots de jogadores têm 2 Beats.',
+    'COUNTERSHOT':'Resposta fora do seu Shot. Não custa Beat. Cada personagem pode usar 1 Countershot por Sequence.',
+    'SEQUENCE':'Ciclo completo passando por todos os Shots ativos. O uso de Countershot renova quando uma nova Sequence começa.'
+  };
+  inspectLabel=function(term){
+    if(currentLang==='PT'){
+      if(term==='THRESHOLD')return 'LIMITE';
+      if(term==='DAMAGE CLOCK')return 'RELÓGIO DE DANO';
+      if(term==='EQUIPMENT')return 'EQUIPAMENTO';
+    }
+    return term;
+  };
+  function setAbilityPt(clsName, abilityName, text){
+    var cls=CLASSES[clsName];
+    if(!cls||!cls.abilities)return;
+    var ability=cls.abilities.find(function(a){return a.name===abilityName;});
+    if(ability)ability.desc_pt=text;
+  }
+  setAbilityPt('Flesh Oracle','Rewrite','Seu corpo recebe uma nova instrução anatômica antes que a lesão se estabilize. Escolha uma opção de Rewrite. Cada opção pode ser usada uma vez por Cena.\n\nImmobilize: Ataque Técnico. Faça um Ataque Técnico contra um alvo próximo. Com sucesso, o alvo perde 1 Beat do Shot atual, ou do próximo Shot se já tiver agido. No Crítico, perde 2 Beats.\nElongate: Técnico. Escolha um alvo visível. Ele testa FLESH contra Limite 10. Em falha, reposicione o alvo para um ponto que você pode ver.\nRegenerate: Técnico. Escolha você mesmo ou um aliado próximo. O alvo regenera 1d4 segmentos do Relógio de Dano no início do próprio Shot por 3 Shots. Um alvo só pode receber um Regenerate por vez.');
+  var previousPolishedLibraryReference=renderLibraryReference;
+  renderLibraryReference=function(){
+    if(currentLang!=='PT')return previousPolishedLibraryReference();
+    var el=document.getElementById('lib-ref-content');if(!el)return;
+    var pt=[
+      ['RESOLUÇÃO','Quando um Desperto tenta algo arriscado, incerto ou oposto, role <b style="color:#fff;">Dreamer Die + Cynical Die + Atributo</b>. Se o total igualar ou superar o Limite, a ação tem sucesso. Falhas em ações arriscadas geralmente adicionam <b style="color:#fff;">+1 Signal</b>. Dados iguais geram Crítico; Crítico bem-sucedido dá <b style="color:#fff;">+1 Overdrive</b> ao grupo.'],
+      ['ROLAGEM DE EPIFANIA','No começo de uma Cena importante, um Desperto rola Dreamer Die + Cynical Die sem Atributo. Dreamer maior cria uma abertura para os jogadores. Cynical maior cria uma pressão para o Narrador. Dados iguais indicam Epifania: a Cena começa alinhada, e os efeitos de Dreamer ou Cynical não se aplicam.'],
+      ['LIMITE','O Limite da ficha é defensivo e fixo pelo Eco. Inimigos rolam contra ele ao atacar ou afetar você. Quando você ataca ou afeta um inimigo, role contra o Limite dele: Comum 8, Elite 10, Boss 11. Não some Atributo ao Limite.'],
+      ['SIGNAL','Signal mede a pressão da Cortex-Net. Cada falha em uma ação arriscada geralmente adiciona +1 Signal. Em Signal 5, acontece um Sync Event por 1 Shot. Depois disso, Signal volta para 0. Signal não fica abaixo de 0.'],
+      ['OVERDRIVE','Overdrive é um recurso do grupo de 0 a 5. Ele reseta ao fim da Sessão e fica em 5 até ser gasto. Gaste 3 para Forçar o Corte: transforme uma falha em sucesso com custo. Gaste 5 para Quebrar Protocolo: escolha sucesso limpo, dano máximo, cancelar um Sync Event ou tomar 1 Shot extra imediatamente.'],
+      ['RELÓGIO DE DANO','Todo Desperto tem Relógio de Dano fixo com 12 segmentos. Marque dano depois da absorção da armadura. Relógio cheio tira o personagem da Cena. Cura restaura exatamente a quantidade descrita na habilidade.'],
+      ['BEATS E SHOTS','Um Shot é o foco de um personagem. Cada Shot de jogador tem 2 Beats. Um Beat pode mover, atacar, usar uma habilidade Técnica, interagir ou ajudar. Ataques e Ataques Técnicos geralmente testam contra o Limite do alvo.'],
+      ['COUNTERSHOT','Countershot é uma resposta fora do seu Shot. Não custa Beat. Cada personagem pode usar 1 Countershot por Sequence. Countershots de habilidade e de armadura compartilham esse limite.'],
+      ['ARMADURA','Weave absorve 6. Para cada 2 absorvidos, cure 1d6 de outro aliado visível, máximo 1d6 por Shot. Brace absorve 9. Ao absorver 3 ou mais de um golpe, faça um ataque como Countershot; sucesso remove 1 Beat, Crítico remove 2. Shell absorve 12. Para cada 6 absorvidos, cause 1d6 a um inimigo adjacente.'],
+      ['ECOS','Glitch Angel: suporte, reparo e controle de Signal. Soul Alchemist: transmutação e utilidade. Void Diver: infiltração e contrajogo. Gloom Reaper: dano, execução e controle. Flesh Oracle: proteção e interceptação.'],
+      ['FACÇÕES','SYNTAX_ERROR segue o colapso calculado sob o Architect. PHANTOM_GLITCH segue a verdade controlada sob Albina. Mementos de Facção são comprados no Mercado.'],
+      ['SERVERS','Servers são realidades paralelas construídas em código e acessadas por realidade virtual. Podem funcionar como uma Cena, uma missão inteira ou um ambiente de exploração, com regras, riscos e entidades próprias.'],
+      ['GLOSSÁRIO DE CAMPO','Desperto: sobrevivente mutante sob supressão falha. Eco: classe do personagem. Arquétipo: padrão psicológico do scan. Facção: grupo que abriga e usa você. Memento: poder, relíquia, implante, arquivo ou procedimento recuperável. Relic (R): recurso gasto no Mercado.']
+    ];
+    buildLibraryFilters(pt);
+    el.innerHTML=pt.filter(function(b){return libraryFilter==='ALL'||libraryCategory(b[0])===libraryFilter;}).map(function(b){return '<div class="ref-heading">'+b[0]+'</div><div class="ref-block">'+b[1]+'</div>';}).join('');
+  };
+}
 applyPortugueseEditorialPass();
 normalizePortugueseTerminology();
+polishPortugueseConsistency();
+/* ===== TRAD PT-BR: localização profunda (glossário + nomes) ===== */
+var PT_NAMES={
+  'Glitch Angel':'Anjo Anômalo','Void Diver':'Mergulhador do Vazio','Flesh Oracle':'Oráculo da Carne','Gloom Reaper':'Ceifador da Penumbra','Soul Alchemist':'Alquimista de Almas',
+  'NAIVE':'INOCENTE','ORPHAN':'ÓRFÃO','BREAKER':'CÍSMICO','HOLLOW':'VENTRÍCULO','SAGE':'SÁBIO','ORACLE':'ORÁCULO',
+  'Bone Blade':'Lâmina de Osso','Titanium Claws':'Garras de Titânio','Titanknuck':'Presságio do Sangue','Conduit':'Condutor','Hollowpoint':'Vazio Estridente','Boltframe':'Moldura Mortífera',
+  'SYNTAX_ERROR':'ERRO_DE_SINTAXE','PHANTOM_GLITCH':'FALHA_FANTASMA','The Architect':'O Arquiteto',
+  'Hotfix':'Remendo','Flush':'Purga','Feedback':'Retorno','Concealment':'Ocultação','Redirect':'Redirecionar','Ghost Signal':'Sinal Fantasma','Intercept':'Interceptar','Calcify':'Calcificar','Rewrite':'Reescrever','Tally':'Contagem','Corrupt':'Corromper','Severance':'Cisão','Eye of the Midnight Sun':'Olho do Sol da Meia-Noite','Reshape':'Remodelar','Overclocked':'Aceleração','Rupture':'Ruptura',
+  'Cascade':'Cascata','Demolish':'Demolir','Crossfire':'Fogo Cruzado','Overburn':'Sobrequeima','Blackout':'Apagão','Ghostwalk':'Caminhada Fantasma','Nullwave':'Onda Nula','Exploit':'Brecha','Mirage':'Miragem','Mirror':'Espelho',
+  'Weapon Upgrade +1':'Aprimoramento de Arma +1','Weapon Upgrade +2':'Aprimoramento de Arma +2','Weapon Upgrade +3':'Aprimoramento de Arma +3','Weave':'Trama','Brace':'Reforço','Shell':'Carapaça','Expedition Suit':'Traje de Expedição','Iron Desert Module':'Módulo Deserto de Ferro','Cosmic Ocean Module':'Módulo Oceano Cósmico','Neural Jack':'Conector Neural','Subdermal Grip':'Aderência Subdérmica','Reflex Threading':'Fios de Reflexo','Signal Baffle':'Supressor de Sinal','Bloodlight Filter':'Filtro de Luz-Sangue','Emergency Stitcher':'Suturador de Emergência','Anchor Spike':'Espinho-Âncora'
+};
+function PN(n){if(currentLang!=='PT'||n==null)return n;return PT_NAMES[n]||n;}
+function attrLabel(k){if(currentLang!=='PT')return k;return ({FLESH:'CARNE',VEIL:'VÉU',METHOD:'MÉTODO'})[k]||k;}
+var PT_LITERALS=[
+  ['Eye of the Midnight Sun','Olho do Sol da Meia-Noite'],['Ghost Signal','Sinal Fantasma'],['Signal Baffle','Supressor de Sinal'],
+  ['Sync Event','Evento de Sincronia'],['Dreamer Die','Dado Sonhador'],['Cynical Die','Dado Cínico'],['Warp Pointer','Desviar Ponteiro'],
+  ['Bone Blade','Lâmina de Osso'],['Titanium Claws','Garras de Titânio'],
+  ['Expedition Suit','Traje de Expedição'],['Iron Desert Module','Módulo Deserto de Ferro'],['Cosmic Ocean Module','Módulo Oceano Cósmico'],
+  ['Neural Jack','Conector Neural'],['Subdermal Grip','Aderência Subdérmica'],['Reflex Threading','Fios de Reflexo'],
+  ['Bloodlight Filter','Filtro de Luz-Sangue'],['Emergency Stitcher','Suturador de Emergência'],['Anchor Spike','Espinho-Âncora'],
+  ['Crossfire','Fogo Cruzado'],['Ghostwalk','Caminhada Fantasma'],['Nullwave','Onda Nula'],['Weapon Upgrade','Aprimoramento de Arma'],
+  ['SYNTAX_ERROR','ERRO_DE_SINTAXE'],['PHANTOM_GLITCH','FALHA_FANTASMA'],['The Architect','O Arquiteto'],['Architect','Arquiteto'],['Rupturing','em Ruptura'],
+  ['UNIT ID','ID DA UNIDADE'],['Unit ID','ID da Unidade'],['unit id','id da unidade']
+];
+var PT_WORDS=[
+  ['Countershots','Reações'],['Countershot','Reação'],['Beats','Ações'],['Beat','Ação'],['Shots','Turnos'],['Shot','Turno'],
+  ['Overdrive','Sobrecarga'],['Signal','Sinal'],['Tally','Contagem'],['Sequence','Sequência'],
+  ['Corrupted','Corrompido'],['Severed','Cortado'],['Blinded','Cego'],['Undetected','Não Detectado'],
+  ['Boss','Chefe'],['Relic','Relíquia'],['Absorption','Absorção'],['Scene','Cena'],['Session','Sessão'],['Critical','Crítico'],
+  ['METHOD','MÉTODO'],['FLESH','CARNE'],['VEIL','VÉU'],
+  ['Hotfix','Remendo'],['Flush','Purga'],['Feedback','Retorno'],['Interrupt','Interromper'],['Concealment','Ocultação'],['Redirect','Redirecionar'],
+  ['Intercept','Interceptar'],['Calcify','Calcificar'],['Rewrite','Reescrever'],['Immobilize','Imobilizar'],['Elongate','Alongar'],['Regenerate','Regenerar'],
+  ['Corrupt','Corromper'],['Severance','Cisão'],['Reshape','Remodelar'],['Overclocked','Aceleração'],['Rupture','Ruptura'],
+  ['Protect','Proteger'],['Heal','Curar'],['Acid','Ácido'],['Conduct','Conduzir'],
+  ['Titanknuck','Soqueira de Titânio'],['Conduit','Condutor'],['Hollowpoint','Ponta Oca'],['Boltframe','Armação de Dardos'],
+  ['Weave','Trama'],['Brace','Reforço'],['Shell','Carapaça'],
+  ['Cascade','Cascata'],['Demolish','Demolir'],['Overburn','Sobrequeima'],['Blackout','Apagão'],['Exploit','Brecha'],['Mirage','Miragem'],['Mirror','Espelho']
+];
+function ptEsc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+var PT_WORD_RE=PT_WORDS.map(function(p){return [new RegExp('\\b'+ptEsc(p[0])+'\\b','g'),p[1]];});
+/* correções de concordância (Reação/Ação são femininas; Contagem feminina) */
+var PT_POSTFIX=[
+  ['um Reação','uma Reação'],['Um Reação','Uma Reação'],['do Reação','da Reação'],['no Reação','na Reação'],['ao Reação','à Reação'],['esse Reação','essa Reação'],['este Reação','esta Reação'],['outro Reação','outra Reação'],['seu Reação','sua Reação'],
+  ['um Ação','uma Ação'],['Um Ação','Uma Ação'],['do Ação','da Ação'],['no Ação','na Ação'],['ao Ação','à Ação'],['esse Ação','essa Ação'],['outro Ação','outra Ação'],['seu Ação','sua Ação'],['este Ação','esta Ação'],
+  ['todos os Contagem','toda a Contagem'],['os Contagem','as Contagens'],['um Contagem','uma Contagem']
+];
+function ptGloss(s){
+  if(typeof s!=='string'||!s)return s;
+  for(var i=0;i<PT_LITERALS.length;i++){s=s.split(PT_LITERALS[i][0]).join(PT_LITERALS[i][1]);}
+  for(var j=0;j<PT_WORD_RE.length;j++){s=s.replace(PT_WORD_RE[j][0],PT_WORD_RE[j][1]);}
+  for(var p=0;p<PT_POSTFIX.length;p++){s=s.split(PT_POSTFIX[p][0]).join(PT_POSTFIX[p][1]);}
+  return s;
+}
+function ptDeepLocalize(){
+  Object.keys(ARCHETYPES).forEach(function(k){var a=ARCHETYPES[k];if(a.desc_pt)a.desc_pt=ptGloss(a.desc_pt);if(a.passive_pt)a.passive_pt=ptGloss(a.passive_pt);});
+  Object.keys(CLASSES).forEach(function(k){var c=CLASSES[k];if(c.role_pt)c.role_pt=ptGloss(c.role_pt);if(c.sig_pt)c.sig_pt=ptGloss(c.sig_pt);(c.abilities||[]).forEach(function(ab){if(ab.desc_pt)ab.desc_pt=ptGloss(ab.desc_pt);ab.name_pt=PT_NAMES[ab.name]||ab.name;});});
+  WEAPONS.forEach(function(w){if(w.desc_pt)w.desc_pt=ptGloss(w.desc_pt);w.name_pt=PT_NAMES[w.name]||w.name;});
+  Object.keys(FACTIONS).forEach(function(k){var f=FACTIONS[k];if(f.desc_pt)f.desc_pt=ptGloss(f.desc_pt);if(f.philosophy_pt)f.philosophy_pt=ptGloss(f.philosophy_pt);});
+  CONTRABAND.forEach(function(g){(g.items||[]).forEach(function(it){if(it.desc_pt)it.desc_pt=ptGloss(it.desc_pt);});});
+  if(typeof INSPECT!=='undefined'&&INSPECT.PT){Object.keys(INSPECT.PT).forEach(function(t){INSPECT.PT[t]=ptGloss(INSPECT.PT[t]);});}
+  Object.keys(LANG.PT).forEach(function(k){if(typeof LANG.PT[k]==='string')LANG.PT[k]=ptGloss(LANG.PT[k]);});
+  LANG.PT.market_relics='RELÍQUIAS';
+  inspectLabel=function(term){
+    if(currentLang==='PT'){
+      var m={'SIGNAL':'SINAL','OVERDRIVE':'SOBRECARGA','BEAT':'AÇÃO','SHOT':'TURNO','COUNTERSHOT':'REAÇÃO','SEQUENCE':'SEQUÊNCIA','THRESHOLD':'LIMITE','DAMAGE CLOCK':'RELÓGIO DE DANO','EQUIPMENT':'EQUIPAMENTO'};
+      if(m[term])return m[term];
+    }
+    return term;
+  };
+  var _prevLib=renderLibraryReference;
+  renderLibraryReference=function(){
+    var r=_prevLib&&_prevLib();
+    if(currentLang==='PT'){var el=document.getElementById('lib-ref-content');if(el)el.innerHTML=ptGloss(el.innerHTML);}
+    return r;
+  };
+}
+ptDeepLocalize();
+currentLang=detectLang();
 initBoot();
-currentLang=detectLang();applyLang();
+applyLang();
 function bindBootRun(){
   const runBtn=document.getElementById('boot-run-btn');
   if(runBtn){
-    const run=function(e){if(e&&e.preventDefault)e.preventDefault();show('s-intro');return false;};
+    const run=function(e){
+      if(e&&e.preventDefault)e.preventDefault();
+      const boot=document.getElementById('s-boot');
+      if(boot&&!boot.classList.contains('hidden'))show('s-intro');
+      return false;
+    };
     runBtn.onclick=run;
     runBtn.addEventListener('pointerup',run,false);
   }
