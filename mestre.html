@@ -65,6 +65,7 @@ var CLOUD={
 <div id="panel" style="display:none;">
   <div class="bar">
     <input id="q" placeholder="filtrar por nome ou ID..." oninput="render()"/>
+    <button onclick="createGroup()">＋ CRIAR GRUPO</button>
     <button onclick="load()">🔄 ATUALIZAR</button>
     <button onclick="logout()">SAIR</button>
     <span id="who" class="meta"></span>
@@ -96,68 +97,87 @@ function setAuth(session){
   if(logged){var w=document.getElementById('who');if(w)w.textContent=(session.user&&session.user.email)||'';load();}
 }
 
+var GROUPS=[];
 function load(){
   if(!SESSION)return;
   document.getElementById('out').innerHTML='<div class="empty">carregando...</div>';
-  fetch(CLOUD.url+'/rest/v1/sheets?select=id,name,data,grupo,updated_at&order=updated_at.desc',{headers:headers()})
-    .then(function(r){return r.json();})
-    .then(function(rows){ROWS=Array.isArray(rows)?rows:[];render();})
-    .catch(function(){document.getElementById('out').innerHTML='<div class="warn">⚠ Não consegui conectar. Confira sua conexão.</div>';});
+  Promise.all([
+    fetch(CLOUD.url+'/rest/v1/sheets?select=id,name,data,grupo,updated_at&order=updated_at.desc',{headers:headers()}).then(function(r){return r.ok?r.json():[];}).catch(function(){return [];}),
+    fetch(CLOUD.url+'/rest/v1/gm_groups?select=name&order=name',{headers:headers()}).then(function(r){return r.ok?r.json():[];}).catch(function(){return [];})
+  ]).then(function(res){
+    ROWS=Array.isArray(res[0])?res[0]:[];
+    GROUPS=(Array.isArray(res[1])?res[1]:[]).map(function(g){return g.name;});
+    render();
+  }).catch(function(){document.getElementById('out').innerHTML='<div class="warn">⚠ Não consegui conectar. Confira sua conexão.</div>';});
+}
+function createGroup(){
+  if(!SESSION)return;
+  var name=sanitizeGroup(prompt('Nome do novo grupo:',''));if(!name)return;
+  fetch(CLOUD.url+'/rest/v1/gm_groups',{method:'POST',headers:Object.assign(headers(),{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({name:name})})
+    .then(function(r){if(r&&r.ok)load();else alert('Não foi possível criar o grupo. Você rodou o SQL da tabela gm_groups?');}).catch(function(){alert('Erro ao criar grupo.');});
 }
 
 function escJs(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 function sanitizeGroup(s){return String(s==null?'':s).replace(/['"\\]/g,'').trim();}
 
+function gjson(extra){return Object.assign(headers(),{'Content-Type':'application/json','Prefer':extra||'return=minimal'});}
+function upsertGroup(name){return fetch(CLOUD.url+'/rest/v1/gm_groups',{method:'POST',headers:gjson('resolution=merge-duplicates'),body:JSON.stringify({name:name})});}
+function delGroupRow(name){return fetch(CLOUD.url+'/rest/v1/gm_groups?name=eq.'+encodeURIComponent(name),{method:'DELETE',headers:headers()});}
+
 function render(){
   var q=(document.getElementById('q').value||'').trim();
   if(q.indexOf('#')>=0)q=q.split('#').pop();
-  q=q.toLowerCase();
+  q=q.toLowerCase();var hasSearch=q.length>0;
   var list=ROWS.filter(function(r){
     var hay=((r.name||'')+' '+(r.id||'')+' '+(r.grupo||'')).toLowerCase();
     return hay.indexOf(q)>=0;
   });
   document.getElementById('count').textContent=list.length+' / '+ROWS.length+' unidades';
-  if(!list.length){document.getElementById('out').innerHTML='<div class="empty">Nenhuma unidade.</div>';return;}
-  // todos os grupos existentes (p/ os seletores)
-  var allGroups=[];ROWS.forEach(function(r){if(r.grupo&&allGroups.indexOf(r.grupo)<0)allGroups.push(r.grupo);});allGroups.sort();
-  // agrupa a lista filtrada
+  // união: grupos da tabela gm_groups + grupos que aparecem nas fichas
+  var allGroups=GROUPS.slice();
+  ROWS.forEach(function(r){if(r.grupo&&allGroups.indexOf(r.grupo)<0)allGroups.push(r.grupo);});
+  allGroups.sort();
   var byGroup={};list.forEach(function(r){var g=r.grupo||'';if(!byGroup[g])byGroup[g]=[];byGroup[g].push(r);});
-  var named=Object.keys(byGroup).filter(function(g){return g!=='';}).sort();
-  var sections=named.concat(byGroup['']?['']:[]);
+  function optsFor(r){var o='<option value="">— sem grupo —</option>';allGroups.forEach(function(gn){o+='<option value="'+esc(gn)+'"'+((r.grupo===gn)?' selected':'')+'>'+esc(gn)+'</option>';});return o+'<option value="__new__">+ novo grupo…</option>';}
+  function cardHtml(r){
+    var d=r.data||{};
+    var arc=esc(d.arc||'—'), cls=esc(d.cls||'—'), fac=d.faction?(' // '+esc(d.faction)):'';
+    var link=APP_URL+'#'+encodeURIComponent(r.id);
+    return '<div class="card">'+
+      '<h2>'+esc(d.name||r.id)+'</h2>'+
+      '<div class="meta">'+arc+fac+'<br>classe: '+cls+'<br>sinal: '+esc(d.signal||0)+' &nbsp; relíquias: '+esc(d.relics||0)+'<br>atualizada: '+when(r.updated_at)+'</div>'+
+      '<div class="id">'+esc(r.id)+'</div>'+
+      '<div class="grp-row"><span class="grp-lbl">grupo:</span><select onchange="onGroupChange(\''+esc(r.id)+'\',this)">'+optsFor(r)+'</select></div>'+
+      '<div class="acts"><a href="'+link+'" target="_blank">ABRIR</a>'+
+      '<a href="#" onclick="navigator.clipboard&&navigator.clipboard.writeText(location.origin+location.pathname.replace(/mestre\\.html$/,\'\')+\''+link+'\');this.textContent=\'COPIADO\';return false;">LINK</a>'+
+      '<a href="#" style="flex:0 0 auto;color:#ff6b6b;border-color:rgba(255,90,90,0.4);" title="apagar" onclick="del(\''+esc(r.id)+'\');return false;">✕</a></div>'+
+      '</div>';
+  }
   var html='';
-  sections.forEach(function(g){
-    var items=byGroup[g], title=g||'SEM GRUPO';
-    html+='<div class="group-sec"><div class="group-hdr"><span class="group-name">'+esc(title)+'</span><span class="group-cnt">'+items.length+'</span>';
-    if(g)html+='<span class="group-acts"><a href="#" title="renomear" onclick="renameGroup(\''+escJs(g)+'\');return false;">✎ renomear</a><a href="#" title="desfazer grupo" onclick="dissolveGroup(\''+escJs(g)+'\');return false;">✕ desfazer</a></span>';
-    html+='</div><div class="grid">';
-    items.forEach(function(r){
-      var d=r.data||{};
-      var arc=esc(d.arc||'—'), cls=esc(d.cls||'—'), fac=d.faction?(' // '+esc(d.faction)):'';
-      var link=APP_URL+'#'+encodeURIComponent(r.id);
-      var opts='<option value="">— sem grupo —</option>';
-      allGroups.forEach(function(gn){opts+='<option value="'+esc(gn)+'"'+((r.grupo===gn)?' selected':'')+'>'+esc(gn)+'</option>';});
-      opts+='<option value="__new__">+ novo grupo…</option>';
-      html+='<div class="card">'+
-        '<h2>'+esc(d.name||r.id)+'</h2>'+
-        '<div class="meta">'+arc+fac+'<br>classe: '+cls+'<br>sinal: '+esc(d.signal||0)+' &nbsp; relíquias: '+esc(d.relics||0)+'<br>atualizada: '+when(r.updated_at)+'</div>'+
-        '<div class="id">'+esc(r.id)+'</div>'+
-        '<div class="grp-row"><span class="grp-lbl">grupo:</span><select onchange="onGroupChange(\''+esc(r.id)+'\',this)">'+opts+'</select></div>'+
-        '<div class="acts"><a href="'+link+'" target="_blank">ABRIR</a>'+
-        '<a href="#" onclick="navigator.clipboard&&navigator.clipboard.writeText(location.origin+location.pathname.replace(/mestre\\.html$/,\'\')+\''+link+'\');this.textContent=\'COPIADO\';return false;">LINK</a>'+
-        '<a href="#" style="flex:0 0 auto;color:#ff6b6b;border-color:rgba(255,90,90,0.4);" title="apagar" onclick="del(\''+esc(r.id)+'\');return false;">✕</a></div>'+
-        '</div>';
-    });
-    html+='</div></div>';
+  // seções de grupos nomeados (inclui vazios, exceto durante busca)
+  allGroups.forEach(function(g){
+    var items=byGroup[g]||[];
+    if(!items.length && hasSearch) return;
+    html+='<div class="group-sec"><div class="group-hdr"><span class="group-name">'+esc(g)+'</span><span class="group-cnt">'+items.length+'</span>'+
+      '<span class="group-acts"><a href="#" title="renomear" onclick="renameGroup(\''+escJs(g)+'\');return false;">✎ renomear</a><a href="#" title="desfazer grupo" onclick="dissolveGroup(\''+escJs(g)+'\');return false;">✕ desfazer</a></span></div>';
+    if(!items.length){html+='<div class="empty" style="margin:0 0 6px;">(grupo vazio — use o seletor "grupo" de um card para adicionar)</div>';}
+    else{html+='<div class="grid">'+items.map(cardHtml).join('')+'</div>';}
+    html+='</div>';
   });
+  // sem grupo
+  var ung=byGroup['']||[];
+  if(ung.length){
+    html+='<div class="group-sec"><div class="group-hdr"><span class="group-name">SEM GRUPO</span><span class="group-cnt">'+ung.length+'</span></div><div class="grid">'+ung.map(cardHtml).join('')+'</div></div>';
+  }
+  if(!html)html='<div class="empty">Nenhuma unidade.</div>';
   document.getElementById('out').innerHTML=html;
 }
 
 function assignGroup(id,grupo){
   if(!SESSION||!id)return;
-  var body={grupo:(grupo&&grupo.length)?grupo:null};
-  fetch(CLOUD.url+'/rest/v1/sheets?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:Object.assign(headers(),{'Content-Type':'application/json','Prefer':'return=minimal'}),body:JSON.stringify(body)})
-    .then(function(r){if(r&&r.ok){var x=ROWS.filter(function(o){return o.id===id;})[0];if(x)x.grupo=body.grupo;render();}else alert('Não foi possível alterar o grupo.');})
-    .catch(function(){alert('Erro ao alterar grupo.');});
+  var g=(grupo&&grupo.length)?grupo:null;
+  function patch(){fetch(CLOUD.url+'/rest/v1/sheets?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:gjson(),body:JSON.stringify({grupo:g})}).then(function(r){if(r&&r.ok)load();else alert('Não foi possível alterar o grupo.');}).catch(function(){alert('Erro ao alterar grupo.');});}
+  if(g&&GROUPS.indexOf(g)<0){upsertGroup(g).then(patch).catch(patch);}else patch();
 }
 function onGroupChange(id,sel){
   if(sel.value==='__new__'){var name=sanitizeGroup(prompt('Nome do novo grupo:','')); if(name)assignGroup(id,name); else render(); return;}
@@ -166,13 +186,16 @@ function onGroupChange(id,sel){
 function renameGroup(old){
   var name=prompt('Novo nome do grupo:',old); if(name===null)return; name=sanitizeGroup(name);
   if(!name||name===old){return;}
-  fetch(CLOUD.url+'/rest/v1/sheets?grupo=eq.'+encodeURIComponent(old),{method:'PATCH',headers:Object.assign(headers(),{'Content-Type':'application/json','Prefer':'return=minimal'}),body:JSON.stringify({grupo:name})})
-    .then(function(r){if(r&&r.ok)load();else alert('Não foi possível renomear.');}).catch(function(){alert('Erro.');});
+  upsertGroup(name)
+    .then(function(){return fetch(CLOUD.url+'/rest/v1/sheets?grupo=eq.'+encodeURIComponent(old),{method:'PATCH',headers:gjson(),body:JSON.stringify({grupo:name})});})
+    .then(function(){return delGroupRow(old);})
+    .then(function(){load();}).catch(function(){alert('Erro ao renomear.');load();});
 }
 function dissolveGroup(name){
   if(!confirm('Desfazer o grupo "'+name+'"? Os personagens ficam SEM grupo (não são apagados).'))return;
-  fetch(CLOUD.url+'/rest/v1/sheets?grupo=eq.'+encodeURIComponent(name),{method:'PATCH',headers:Object.assign(headers(),{'Content-Type':'application/json','Prefer':'return=minimal'}),body:JSON.stringify({grupo:null})})
-    .then(function(r){if(r&&r.ok)load();else alert('Erro.');}).catch(function(){alert('Erro.');});
+  fetch(CLOUD.url+'/rest/v1/sheets?grupo=eq.'+encodeURIComponent(name),{method:'PATCH',headers:gjson(),body:JSON.stringify({grupo:null})})
+    .then(function(){return delGroupRow(name);})
+    .then(function(){load();}).catch(function(){alert('Erro.');load();});
 }
 
 function del(id){
