@@ -967,7 +967,7 @@ function cloudImg(row){if(!row||!row.img)return null;try{return typeof row.img==
 function cloudSave(d,imgStr){
   if(!CLOUD_ON||!d||!d.id)return;
   var row={id:d.id,name:d.name||'',data:d,img:imgStr||null,updated_at:new Date().toISOString()};
-  fetch(CLOUD.url+'/rest/v1/sheets',{method:'POST',headers:Object.assign(cloudHeaders(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify(row)}).catch(function(){});
+  fetch(CLOUD.url+'/rest/v1/sheets',{method:'POST',headers:Object.assign(cloudHeaders(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify(row)}).then(function(r){if(r&&r.ok)cloudOkNotify();}).catch(function(){});
 }
 function cloudLoad(id){
   if(!CLOUD_ON)return Promise.resolve(null);
@@ -987,6 +987,9 @@ function cloudSync(){
   },1200);
 }
 function shareUrl(){return location.origin+location.pathname+'#'+(st.currentId||'');}
+function bcSetUrl(){if(st&&st.currentId){try{history.replaceState(null,'',location.pathname+'#'+st.currentId);}catch(e){}}}
+var _cloudOkShown=false;
+function cloudOkNotify(){if(_cloudOkShown||!CLOUD_ON)return;_cloudOkShown=true;if(typeof pushNotify==='function')pushNotify(currentLang==='PT'?'☁ Ficha salva na nuvem.':'☁ Sheet saved to cloud.');}
 function shareLink(){
   if(!st.currentId)return;
   var url=shareUrl(),L=(currentLang==='PT');
@@ -1854,9 +1857,9 @@ function buildSheet(){
   resetPortraitSlot();
   switchTab('main');
 
-  try{localStorage.setItem('bc_'+id,JSON.stringify({id,name:st.charName,arc:st.arcResult,cls:st.classResult,faction:st.factionResult,weaponIdx:st.weaponIdx,implantIdx:st.implantIdx||0,implantSlots:st.implantSlots||0,implantAbsorb:st.implantAbsorb||0,clock:0,implantUsed:0,signal:0,overdrive:0,tally:0,armorUsed:0,notes:'',story:'',inventory:st.inventory,suitModules:st.suitModules||[],relics:st.relics||0,owned:st.owned||[],upgrades:st.upgrades||{},mementoSlots:st.mementoSlots||['','','']}));}catch(e){}
+  try{localStorage.setItem('bc_'+id,JSON.stringify({id,name:st.charName,arc:st.arcResult,cls:st.classResult,faction:st.factionResult,weaponIdx:st.weaponIdx,implantIdx:st.implantIdx||0,implantSlots:st.implantSlots||0,implantAbsorb:st.implantAbsorb||0,clock:0,implantUsed:0,signal:0,overdrive:0,tally:0,armorUsed:0,notes:'',story:'',inventory:st.inventory,suitModules:st.suitModules||[],relics:st.relics||0,owned:st.owned||[],upgrades:st.upgrades||{},mementoSlots:st.mementoSlots||['','','']}));cloudSync();}catch(e){}
 
-  show('s-sheet');showOrientation();
+  show('s-sheet');showOrientation();bcSetUrl();
 }
 
 function renderRelics(){var el=document.getElementById('sh-relics');if(el)el.textContent=st.relics||0;}
@@ -2458,7 +2461,7 @@ function applyUnit(d,img){
   if(d.story&&document.getElementById('sh-story'))document.getElementById('sh-story').value=d.story;
   if(img&&img.b64){try{imgState.rawB64=img.b64;var image=new Image();image.onload=function(){imgState.img=image;imgState.offsetX=img.offsetX||0;imgState.offsetY=img.offsetY||0;imgState.scale=img.scale||1;document.getElementById('portrait-placeholder').style.display='none';var canvas=document.getElementById('portrait-canvas');canvas.style.display='block';drawPortrait();document.getElementById('portrait-controls').style.display='flex';try{localStorage.setItem('bc_img_'+st.currentId,JSON.stringify(img));}catch(e){}};image.src=img.b64;}catch(e){}}
   persistSheet();
-  show('s-sheet');showOrientation();
+  show('s-sheet');showOrientation();bcSetUrl();
 }
 function loadUnit(){
   var inp=(document.getElementById('ret-inp').value||'').trim();if(!inp)return;

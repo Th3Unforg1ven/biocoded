@@ -70,7 +70,9 @@ function load(){
 }
 
 function render(){
-  var q=(document.getElementById('q').value||'').toLowerCase();
+  var q=(document.getElementById('q').value||'').trim();
+  if(q.indexOf('#')>=0)q=q.split('#').pop();
+  q=q.toLowerCase();
   var list=ROWS.filter(function(r){
     var hay=((r.name||'')+' '+(r.id||'')).toLowerCase();
     return hay.indexOf(q)>=0;
