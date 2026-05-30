@@ -30,6 +30,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"/>
 <link rel="icon" type="image/png" sizes="64x64" href="favicon.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{background:#000;min-height:100vh;min-height:100dvh;width:100%;font-family:'Share Tech Mono',monospace;color:#00ff88;overflow-x:hidden;}
@@ -572,6 +573,15 @@ body{padding:0;touch-action:manipulation;}
     <button type="button" class="sys-mini-btn" id="settings-en" onclick="setLang('EN');updateSettingsPanel()">EN</button>
     <button type="button" class="sys-mini-btn" id="settings-pt" onclick="setLang('PT');updateSettingsPanel()">PT-BR</button>
   </div>
+  <div id="acct-section" style="margin-top:14px;border-top:1px solid rgba(0,255,136,0.12);padding-top:12px;">
+    <div class="sys-panel-body" style="margin-bottom:8px;">// CONTA</div>
+    <div id="acct-who" style="font-size:10px;color:rgba(0,255,136,0.55);margin-bottom:8px;word-break:break-all;"></div>
+    <div class="sys-panel-actions" style="flex-wrap:wrap;">
+      <button type="button" class="sys-mini-btn" id="acct-login" onclick="bcLogin()">Entrar com Google</button>
+      <button type="button" class="sys-mini-btn" id="acct-units" style="display:none;" onclick="bcOpenMyUnits()">Minhas Unidades</button>
+      <button type="button" class="sys-mini-btn" id="acct-logout" style="display:none;" onclick="bcLogout()">Sair</button>
+    </div>
+  </div>
 </div>
 
 <!-- BOOT -->
@@ -623,6 +633,7 @@ body{padding:0;touch-action:manipulation;}
   <div class="intro-btns" style="gap:10px;">
     <button class="btn" data-i18n="btn_initiate_scan" onclick="showCodename()">INITIATE SCAN</button>
     <button class="btn secondary" data-i18n="btn_load_unit" onclick="show('s-retrieve')">LOAD UNIT ID</button>
+    <button class="btn secondary" id="intro-units" style="display:none;" onclick="bcOpenMyUnits()">MINHAS UNIDADES</button>
   </div>
 </div>
 
@@ -961,6 +972,18 @@ This terminal creates and stores your character. The full Patient File explains 
   </div>
 </div>
 
+<!-- MINHAS UNIDADES -->
+<div id="s-myunits" class="screen hidden" style="justify-content:space-between;">
+  <div>
+    <div class="glitch" data-text="MY UNITS" style="font-size:28px;display:block;">MINHAS UNIDADES</div>
+    <div class="page-hdr-sub" style="margin-top:6px;margin-bottom:20px;">UNIDADES VINCULADAS À SUA CONTA</div>
+    <div id="myunits-list"></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    <button class="btn secondary" onclick="show('s-intro')">VOLTAR</button>
+  </div>
+</div>
+
 <script>
 /* ===================== CLOUD SYNC (Supabase) =====================
    COLE ABAIXO os dados do seu projeto Supabase (Project Settings > API).
@@ -972,17 +995,31 @@ var CLOUD={
   key:'sb_publishable_X_79kaZaQ6V-je5uANotdg_WDJxfTsB'
 };
 var CLOUD_ON=(CLOUD.url.indexOf('http')===0 && CLOUD.key.length>20);
-function cloudHeaders(){return {'apikey':CLOUD.key,'Authorization':'Bearer '+CLOUD.key,'Content-Type':'application/json'};}
+/* ----- Autenticação (Supabase Auth / Google) ----- */
+var SB=null,_authUser=null,_authToken=null,_currentOwner=null;
+try{ if(window.supabase&&CLOUD_ON){ SB=window.supabase.createClient(CLOUD.url,CLOUD.key); } }catch(e){}
+function bcOnAuth(session){
+  _authUser=session?session.user:null;
+  _authToken=session?session.access_token:null;
+  if(typeof bcUpdateAccountUI==='function')bcUpdateAccountUI();
+}
+if(SB){
+  try{ SB.auth.getSession().then(function(r){bcOnAuth(r&&r.data?r.data.session:null);}); }catch(e){}
+  try{ SB.auth.onAuthStateChange(function(_e,session){bcOnAuth(session);}); }catch(e){}
+}
+function cloudHeaders(){return {'apikey':CLOUD.key,'Authorization':'Bearer '+(_authToken||CLOUD.key),'Content-Type':'application/json'};}
 function cloudImg(row){if(!row||!row.img)return null;try{return typeof row.img==='string'?JSON.parse(row.img):row.img;}catch(e){return null;}}
 function cloudSave(d,imgStr){
-  if(!CLOUD_ON||!d||!d.id)return;
+  if(!CLOUD_ON||!d||!d.id)return Promise.resolve(false);
+  /* NÃO enviamos user_id no upsert: a posse só muda via bcClaim (PATCH),
+     então editar uma ficha nunca rouba nem zera o dono dela. */
   var row={id:d.id,name:d.name||'',data:d,img:imgStr||null,updated_at:new Date().toISOString()};
-  fetch(CLOUD.url+'/rest/v1/sheets',{method:'POST',headers:Object.assign(cloudHeaders(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify(row)}).then(function(r){if(r&&r.ok)cloudOkNotify();}).catch(function(){});
+  return fetch(CLOUD.url+'/rest/v1/sheets',{method:'POST',headers:Object.assign(cloudHeaders(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify(row)}).then(function(r){if(r&&r.ok)cloudOkNotify();return r&&r.ok;}).catch(function(){return false;});
 }
 function cloudLoad(id){
   if(!CLOUD_ON)return Promise.resolve(null);
   return fetch(CLOUD.url+'/rest/v1/sheets?id=eq.'+encodeURIComponent(id)+'&select=*',{headers:cloudHeaders()})
-    .then(function(r){return r.json();}).then(function(rows){return (rows&&rows[0])?rows[0]:null;})
+    .then(function(r){return r.json();}).then(function(rows){var row=(rows&&rows[0])?rows[0]:null;_currentOwner=row?(row.user_id||null):null;if(typeof bcUpdateAccountUI==='function')bcUpdateAccountUI();return row;})
     .catch(function(){return null;});
 }
 var _cloudTimer=null;
@@ -993,9 +1030,14 @@ function cloudSync(){
     var d=null,img=null;
     try{d=JSON.parse(localStorage.getItem('bc_'+st.currentId));}catch(e){}
     try{img=localStorage.getItem('bc_img_'+st.currentId);}catch(e){}
-    if(d)cloudSave(d,img);
+    if(d){
+      var p=cloudSave(d,img);
+      /* ficha nova criada por quem está logado -> vincula automaticamente à conta */
+      if(_authUser&&_isNewSheet&&!_currentOwner&&p&&p.then){var nid=d.id;p.then(function(ok){if(ok){_isNewSheet=false;bcClaim(nid);}});}
+    }
   },1200);
 }
+var _isNewSheet=false;
 function shareUrl(){return location.origin+location.pathname+'#'+(st.currentId||'');}
 function bcSetUrl(){if(st&&st.currentId){try{history.replaceState(null,'',location.pathname+'#'+st.currentId);}catch(e){}try{localStorage.setItem('bc_last',st.currentId);}catch(e){}}}
 var _cloudOkShown=false;
@@ -1019,8 +1061,11 @@ function bcCloudNotifyUI(){
     var b=document.getElementById('notify-copylink');
     if(!b){b=document.createElement('button');b.type='button';b.className='sys-mini-btn';b.id='notify-copylink';b.onclick=function(){shareLinkNotify();};actions.insertBefore(b,actions.firstChild);}
     b.textContent=L?'COPIAR LINK':'COPY LINK';
+    var cb=document.getElementById('notify-claim');
+    if(!cb){cb=document.createElement('button');cb.type='button';cb.className='sys-mini-btn';cb.id='notify-claim';cb.style.display='none';cb.onclick=function(){bcClaimCurrent();};actions.insertBefore(cb,b.nextSibling);}
     var others=actions.querySelectorAll('button');
-    for(var j=0;j<others.length;j++){if(others[j].id!=='notify-copylink')others[j].style.display='none';}
+    for(var j=0;j<others.length;j++){var keep=(others[j].id==='notify-copylink'||others[j].id==='notify-claim');if(!keep)others[j].style.display='none';}
+    if(typeof bcUpdateAccountUI==='function')bcUpdateAccountUI();
   }
 }
 function shareLink(){
@@ -1037,6 +1082,55 @@ function idBlockHTML(id){
     ? '<div id="sh-sharelink" class="sharelink-btn" onclick="shareLink()" title="'+(L?'Copiar link de acesso':'Copy access link')+'">'+(L?'copiar link':'copy link')+'</div>'
     : '<div class="unit-id-save">'+(L?'SALVE ESTE CÓDIGO':'SAVE THIS CODE')+'</div>';
   return '<div class="unit-id-label">'+(L?'ID DA UNIDADE':'UNIT ID')+'</div><div class="unit-id-val">'+id+'</div>'+foot;
+}
+/* ===== CONTAS (login Google) / MINHAS UNIDADES ===== */
+function bcEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c];});}
+function bcLoggedIn(){return !!_authUser;}
+function bcLogin(){
+  if(!SB){alert(currentLang==='PT'?'Login indisponível (sem conexão).':'Login unavailable (offline).');return;}
+  try{SB.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});}catch(e){}
+}
+function bcLogout(){
+  if(!SB)return;
+  try{SB.auth.signOut().then(function(){_authUser=null;_authToken=null;_currentOwner=null;bcUpdateAccountUI();});}catch(e){}
+}
+function bcClaim(id){
+  if(!CLOUD_ON||!SB||!_authUser||!id)return Promise.resolve(false);
+  return fetch(CLOUD.url+'/rest/v1/sheets?id=eq.'+encodeURIComponent(id),{method:'PATCH',headers:Object.assign(cloudHeaders(),{'Prefer':'return=minimal'}),body:JSON.stringify({user_id:_authUser.id})})
+    .then(function(r){if(r&&r.ok){_currentOwner=_authUser.id;bcUpdateAccountUI();}return r&&r.ok;}).catch(function(){return false;});
+}
+function bcClaimCurrent(){
+  if(!_authUser){bcLogin();return;}
+  if(!st||!st.currentId)return;
+  bcClaim(st.currentId).then(function(ok){if(typeof pushNotify==='function')pushNotify(ok?(currentLang==='PT'?'Ficha vinculada à sua conta. ✓':'Sheet linked to your account. ✓'):(currentLang==='PT'?'Não foi possível vincular.':'Could not link.'));});
+}
+function bcMyUnits(){
+  if(!CLOUD_ON||!_authUser)return Promise.resolve([]);
+  return fetch(CLOUD.url+'/rest/v1/sheets?user_id=eq.'+encodeURIComponent(_authUser.id)+'&select=id,name,data,updated_at&order=updated_at.desc',{headers:cloudHeaders()})
+    .then(function(r){return r.json();}).then(function(rows){return Array.isArray(rows)?rows:[];}).catch(function(){return [];});
+}
+function bcOpenUnit(id){if(id&&SB){cloudLoad(id).then(function(row){if(row&&row.data)applyUnit(row.data,cloudImg(row));});}}
+function bcOpenMyUnits(){
+  show('s-myunits');
+  var box=document.getElementById('myunits-list');var L=(currentLang==='PT');
+  if(box)box.innerHTML='<div style="color:rgba(0,255,136,0.5);font-size:13px;">'+(L?'carregando...':'loading...')+'</div>';
+  bcMyUnits().then(function(rows){
+    if(!box)return;
+    if(!rows.length){box.innerHTML='<div style="color:rgba(0,255,136,0.5);font-size:13px;line-height:1.7;">'+(L?'Nenhuma unidade vinculada ainda. Abra ou crie uma ficha e toque em "vincular à minha conta".':'No units linked yet. Open or create a sheet and tap "link to my account".')+'</div>';return;}
+    box.innerHTML=rows.map(function(r){var d=r.data||{};return '<button class="btn secondary" style="width:100%;text-align:left;margin-bottom:8px;padding:14px 12px;" onclick="bcOpenUnit(\''+bcEsc(r.id)+'\')"><b style="font-size:14px;">'+bcEsc(d.name||r.id)+'</b><br><span style="font-size:10px;color:rgba(0,255,136,0.55);">'+bcEsc(d.arc||'')+(d.cls?(' // '+bcEsc(d.cls)):'')+'</span></button>';}).join('');
+  });
+}
+function bcUpdateAccountUI(){
+  var L=(currentLang==='PT'),inApp=bcLoggedIn();
+  var loginBtn=document.getElementById('acct-login'),logoutBtn=document.getElementById('acct-logout'),unitsBtn=document.getElementById('acct-units'),who=document.getElementById('acct-who');
+  if(loginBtn){loginBtn.style.display=inApp?'none':'';loginBtn.textContent=L?'Entrar com Google':'Sign in with Google';}
+  if(logoutBtn){logoutBtn.style.display=inApp?'':'none';logoutBtn.textContent=L?'Sair':'Sign out';}
+  if(unitsBtn){unitsBtn.style.display=inApp?'':'none';unitsBtn.textContent=L?'Minhas Unidades':'My Units';}
+  if(who)who.textContent=inApp?(_authUser.email||''):'';
+  var introUnits=document.getElementById('intro-units');
+  if(introUnits)introUnits.style.display=inApp?'':'none';
+  var claimBtn=document.getElementById('notify-claim');
+  if(claimBtn){var owned=(_currentOwner&&_authUser&&_currentOwner===_authUser.id);claimBtn.style.display=(inApp&&st&&st.currentId&&!owned)?'':'none';claimBtn.textContent=L?'VINCULAR À MINHA CONTA':'LINK TO MY ACCOUNT';}
 }
 /* ================================================================= */
 const ARCHETYPES={
@@ -1723,6 +1817,7 @@ function showWeaponScreen(){
 function confirmWeapon(){
   if(st.weaponIdx===null)return;
   st.implantIdx=0;st.implantSlots=0;st.implantAbsorb=0;st.implantUsed=0;
+  _isNewSheet=true;_currentOwner=null;
   buildSheet();
 }
 
@@ -2479,6 +2574,7 @@ function savePortrait(){
 function showRetrieve(){show('s-retrieve');}
 
 function applyUnit(d,img){
+  _isNewSheet=false;
   st.charName=d.name;st.arcResult=d.arc;st.classResult=d.cls;st.factionResult=d.faction||'';st.weaponIdx=d.weaponIdx;st.inventory=d.inventory||{};st.suitModules=d.suitModules||[];
   buildSheet();
   var orphan=st.currentId;
@@ -2729,6 +2825,7 @@ function applyLang(){
   if(typeof renderLibraryReference==='function')renderLibraryReference();
   if(typeof renderNotifyLog==='function')renderNotifyLog();
   if(typeof updateNotifyPanelExportState==='function')updateNotifyPanelExportState();
+  if(typeof bcUpdateAccountUI==='function')bcUpdateAccountUI();
   var en=document.getElementById('lang-en'),pt=document.getElementById('lang-pt');
   if(en)en.style.color=currentLang==='EN'?'#00ff88':'rgba(0,255,136,0.4)';
   if(pt)pt.style.color=currentLang==='PT'?'#00ff88':'rgba(0,255,136,0.4)';

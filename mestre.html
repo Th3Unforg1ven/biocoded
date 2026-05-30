@@ -25,7 +25,11 @@
   .empty{color:rgba(0,255,136,0.5);font-size:13px;margin-top:20px;}
   .warn{color:#ff9900;font-size:13px;margin-top:20px;line-height:1.7;}
   code{color:#fff;}
+  .gate{max-width:460px;margin:60px auto;text-align:center;}
+  .gate p{font-size:13px;color:rgba(0,255,136,0.6);line-height:1.7;margin:14px 0 22px;}
+  #gbtn{font-size:14px;padding:12px 22px;}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <!-- ===== COLE AQUI OS MESMOS DADOS DO SEU index.html ===== -->
@@ -40,33 +44,55 @@ var CLOUD={
 <h1>BIOCODED // PAINEL DO MESTRE</h1>
 <div class="sub">Todas as unidades do grupo, atualizadas em tempo real.</div>
 
-<div class="bar">
-  <input id="q" placeholder="filtrar por nome ou ID..." oninput="render()"/>
-  <button onclick="load()">🔄 ATUALIZAR</button>
-  <span id="count" class="meta"></span>
+<!-- tela de login (some quando logado) -->
+<div id="gate" class="gate" style="display:none;">
+  <p>Entre com a conta de <b>mestre</b> para ver as fichas do grupo.</p>
+  <button id="gbtn" onclick="login()">Entrar com Google</button>
+  <div id="gate-msg" class="warn" style="display:none;"></div>
 </div>
 
-<div id="out"></div>
+<!-- painel (some quando deslogado) -->
+<div id="panel" style="display:none;">
+  <div class="bar">
+    <input id="q" placeholder="filtrar por nome ou ID..." oninput="render()"/>
+    <button onclick="load()">🔄 ATUALIZAR</button>
+    <button onclick="logout()">SAIR</button>
+    <span id="who" class="meta"></span>
+    <span id="count" class="meta"></span>
+  </div>
+  <div id="out"></div>
+</div>
 
 <script>
 var APP_URL='index.html'; // link base das fichas (mesmo diretorio)
 var ROWS=[];
 var CLOUD_ON=(CLOUD.url.indexOf('http')===0 && CLOUD.key.length>20);
+var SB=null,SESSION=null;
+try{ if(window.supabase&&CLOUD_ON)SB=window.supabase.createClient(CLOUD.url,CLOUD.key); }catch(e){}
 
-function headers(){return {'apikey':CLOUD.key,'Authorization':'Bearer '+CLOUD.key};}
+function token(){return SESSION?SESSION.access_token:CLOUD.key;}
+function headers(){return {'apikey':CLOUD.key,'Authorization':'Bearer '+token()};}
 function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;'})[c];});}
 function when(t){if(!t)return'—';try{var d=new Date(t);return d.toLocaleString();}catch(e){return t;}}
+function gmsg(t){var m=document.getElementById('gate-msg');if(m){m.style.display='';m.textContent=t;}}
+
+function login(){ if(!SB){gmsg('Login indisponível (sem conexão).');return;} try{SB.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});}catch(e){} }
+function logout(){ if(SB)try{SB.auth.signOut();}catch(e){} }
+
+function setAuth(session){
+  SESSION=session;var logged=!!session;
+  document.getElementById('gate').style.display=logged?'none':'';
+  document.getElementById('panel').style.display=logged?'':'none';
+  if(logged){var w=document.getElementById('who');if(w)w.textContent=(session.user&&session.user.email)||'';load();}
+}
 
 function load(){
-  if(!CLOUD_ON){
-    document.getElementById('out').innerHTML='<div class="warn">⚠ Cole a <b>url</b> e a <b>key</b> do Supabase no topo deste arquivo (os mesmos do <code>index.html</code>).</div>';
-    return;
-  }
+  if(!SESSION)return;
   document.getElementById('out').innerHTML='<div class="empty">carregando...</div>';
   fetch(CLOUD.url+'/rest/v1/sheets?select=id,name,data,updated_at&order=updated_at.desc',{headers:headers()})
     .then(function(r){return r.json();})
     .then(function(rows){ROWS=Array.isArray(rows)?rows:[];render();})
-    .catch(function(){document.getElementById('out').innerHTML='<div class="warn">⚠ Não consegui conectar. Confira url/key e a política de leitura da tabela.</div>';});
+    .catch(function(){document.getElementById('out').innerHTML='<div class="warn">⚠ Não consegui conectar. Confira sua conexão.</div>';});
 }
 
 function render(){
@@ -96,9 +122,15 @@ function render(){
   document.getElementById('out').innerHTML=html;
 }
 
-load();
-setInterval(load,12000);
-window.addEventListener('focus',load);
+if(SB){
+  SB.auth.getSession().then(function(r){setAuth(r&&r.data?r.data.session:null);});
+  SB.auth.onAuthStateChange(function(_e,s){setAuth(s);});
+}else{
+  document.getElementById('gate').style.display='';
+  gmsg('⚠ Configuração do Supabase ausente neste arquivo.');
+}
+setInterval(function(){if(SESSION)load();},12000);
+window.addEventListener('focus',function(){if(SESSION)load();});
 </script>
 </body>
 </html>
