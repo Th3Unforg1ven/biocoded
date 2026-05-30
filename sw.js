@@ -1,12 +1,14 @@
 /* BIOCODED service worker — offline app shell + caching */
-const CACHE = 'biocoded-v1';
+const CACHE = 'biocoded-v2';
 const SHELL = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icon-192.png',
   './icon-512.png',
-  './apple-touch-icon.png'
+  './apple-touch-icon.png',
+  './favicon.png',
+  './favicon-32.png'
 ];
 
 self.addEventListener('install', function (e) {
