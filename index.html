@@ -1019,6 +1019,8 @@ function bcCloudNotifyUI(){
     var b=document.getElementById('notify-copylink');
     if(!b){b=document.createElement('button');b.type='button';b.className='sys-mini-btn';b.id='notify-copylink';b.onclick=function(){shareLinkNotify();};actions.insertBefore(b,actions.firstChild);}
     b.textContent=L?'COPIAR LINK':'COPY LINK';
+    var others=actions.querySelectorAll('button');
+    for(var j=0;j<others.length;j++){if(others[j].id!=='notify-copylink')others[j].style.display='none';}
   }
 }
 function shareLink(){
