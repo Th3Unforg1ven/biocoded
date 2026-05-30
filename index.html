@@ -299,6 +299,11 @@ html,body{background:#000;min-height:100vh;min-height:100dvh;width:100%;font-fam
 .unit-id-label{font-size:9px;color:rgba(0,255,136,0.65);letter-spacing:1px;}
 .unit-id-val{font-size:14px;color:#00ff88;letter-spacing:2px;font-family:'Orbitron',sans-serif;font-weight:700;}
 .unit-id-save{font-size:9px;color:rgba(0,255,136,0.65);}
+.sharelink-btn{cursor:pointer;color:rgba(0,255,136,0.5);font-size:9px;letter-spacing:1px;display:inline-flex;align-items:center;gap:4px;transition:color .2s;user-select:none;}
+.sharelink-btn:before{content:'🔗';font-size:8px;opacity:0.8;}
+.sharelink-btn:hover{color:#00ff88;}
+.sharelink-btn.copied{color:#00ff88;}
+.sharelink-btn.copied:before{content:'✓';}
 .unit-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
 .unit-title-wrap{min-width:0;flex:1;}
 .unit-id-wrap{display:flex;align-items:center;gap:12px;flex-shrink:0;text-align:right;}
@@ -990,17 +995,39 @@ function shareUrl(){return location.origin+location.pathname+'#'+(st.currentId||
 function bcSetUrl(){if(st&&st.currentId){try{history.replaceState(null,'',location.pathname+'#'+st.currentId);}catch(e){}}}
 var _cloudOkShown=false;
 function cloudOkNotify(){if(_cloudOkShown||!CLOUD_ON)return;_cloudOkShown=true;if(typeof pushNotify==='function')pushNotify(currentLang==='PT'?'☁ Ficha salva na nuvem.':'☁ Sheet saved to cloud.');}
+function shareLinkNotify(){
+  var L=(currentLang==='PT'),url=shareUrl(),b=document.getElementById('notify-copylink');
+  function ok(){if(b){b.textContent=L?'✓ COPIADO':'✓ COPIED';setTimeout(function(){b.textContent=L?'COPIAR LINK':'COPY LINK';},1600);}}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(ok).catch(function(){window.prompt(L?'Copie seu link:':'Copy your link:',url);});}
+  else{window.prompt(L?'Copie seu link:':'Copy your link:',url);}
+}
+function bcCloudNotifyUI(){
+  var np=document.getElementById('notify-panel');if(!np||!CLOUD_ON)return;
+  var L=(currentLang==='PT');
+  np.classList.remove('export-cleared');
+  var title=np.querySelector('.sys-panel-title');
+  if(title){title.removeAttribute('data-i18n');title.textContent=L?'// NUVEM':'// CLOUD';}
+  var body=np.querySelector('.sys-panel-body');
+  if(body){body.removeAttribute('data-i18n');body.textContent=L?'☁ Esta ficha salva sozinha na nuvem. Copie seu link de acesso e guarde-o para reabrir esta unidade em qualquer aparelho.':'☁ This sheet auto-saves to the cloud. Copy your access link and keep it to reopen this unit on any device.';}
+  var actions=np.querySelector('.sys-panel-actions');
+  if(actions){
+    var b=document.getElementById('notify-copylink');
+    if(!b){b=document.createElement('button');b.type='button';b.className='sys-mini-btn';b.id='notify-copylink';b.onclick=function(){shareLinkNotify();};actions.insertBefore(b,actions.firstChild);}
+    b.textContent=L?'COPIAR LINK':'COPY LINK';
+  }
+}
 function shareLink(){
   if(!st.currentId)return;
   var url=shareUrl(),L=(currentLang==='PT');
+  function feedback(){var el=document.getElementById('sh-sharelink');if(!el)return;el.classList.add('copied');el.textContent=L?'link copiado':'link copied';setTimeout(function(){el.classList.remove('copied');el.textContent=L?'copiar link':'copy link';},1800);}
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(url).then(function(){if(typeof pushNotify==='function')pushNotify(L?'Link copiado! Salve nos favoritos.':'Link copied! Bookmark it.');}).catch(function(){window.prompt(L?'Copie seu link de acesso:':'Copy your access link:',url);});
+    navigator.clipboard.writeText(url).then(feedback).catch(function(){window.prompt(L?'Copie seu link de acesso:':'Copy your access link:',url);});
   }else{window.prompt(L?'Copie seu link de acesso:':'Copy your access link:',url);}
 }
 function idBlockHTML(id){
   var L=(currentLang==='PT');
   var foot=CLOUD_ON
-    ? '<div class="unit-id-save" style="cursor:pointer;text-decoration:underline;" onclick="shareLink()">'+(L?'🔗 COPIAR LINK DE ACESSO':'🔗 COPY ACCESS LINK')+'</div>'
+    ? '<div id="sh-sharelink" class="sharelink-btn" onclick="shareLink()" title="'+(L?'Copiar link de acesso':'Copy access link')+'">'+(L?'copiar link':'copy link')+'</div>'
     : '<div class="unit-id-save">'+(L?'SALVE ESTE CÓDIGO':'SAVE THIS CODE')+'</div>';
   return '<div class="unit-id-label">'+(L?'ID DA UNIDADE':'UNIT ID')+'</div><div class="unit-id-val">'+id+'</div>'+foot;
 }
@@ -2536,6 +2563,7 @@ function renderNotifyLog(){
 }
 function updateNotifyPanelExportState(){
   var np=document.getElementById('notify-panel');if(!np)return;
+  if(CLOUD_ON){bcCloudNotifyUI();return;}
   var exported=isFileExported();
   np.classList.toggle('export-cleared',exported);
   var title=np.querySelector('.sys-panel-title');
@@ -2876,7 +2904,7 @@ function toggleNotify(ev){
   np.classList.toggle('hidden',!opening);
   if(nb)nb.classList.toggle('active',opening);
   if(opening){updateNotifyPanelExportState();renderNotifyLog();}
-  if(opening&&nb&&isFileExported())nb.classList.remove('notify-pulse');
+  if(opening&&nb&&(CLOUD_ON||isFileExported()))nb.classList.remove('notify-pulse');
 }
 function toggleSettings(ev){
   if(ev)ev.stopPropagation();
@@ -3266,6 +3294,7 @@ function normalizePortugueseTerminology(){
 function showOrientation(){
   var nb=document.getElementById('notify-btn');
   if(!nb)return;
+  if(CLOUD_ON){nb.classList.remove('notify-pulse');bcCloudNotifyUI();return;}
   if(isFileExported())nb.classList.remove('notify-pulse');
   else nb.classList.add('notify-pulse');
   updateNotifyPanelExportState();
@@ -3285,7 +3314,7 @@ function markFileExported(){
   closeSystemPanels();
 }
 function dismissOrient(){
-  if(!isFileExported()){
+  if(!CLOUD_ON&&!isFileExported()){
     pushNotify(currentLang==='PT'?'Exporte o arquivo para concluir o alerta.':'Export the file to clear this alert.');
     showOrientation();
     return;

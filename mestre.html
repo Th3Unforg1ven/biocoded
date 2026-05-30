@@ -97,6 +97,8 @@ function render(){
 }
 
 load();
+setInterval(load,12000);
+window.addEventListener('focus',load);
 </script>
 </body>
 </html>
