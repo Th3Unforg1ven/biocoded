@@ -830,7 +830,6 @@ body{padding:0;touch-action:manipulation;}
         <div class="unit-name" id="sh-name">--</div>
         <div class="unit-arc" id="sh-arc">--</div>
         <div class="unit-class-name" id="sh-class-name">--</div>
-        <div id="sh-edit-identity" onclick="openEditIdentity()" style="cursor:pointer;font-size:9px;color:rgba(0,255,136,0.5);letter-spacing:1px;margin-top:5px;text-decoration:underline;display:inline-block;">✎ editar identidade</div>
       </div>
       <div class="unit-id-wrap">
         <div id="sh-cls-icon" class="unit-echo-icon"></div>
@@ -1167,6 +1166,7 @@ function renderMyUnits(){
   if(!_myUnits.length){box.innerHTML='<div style="color:rgba(0,255,136,0.5);font-size:13px;line-height:1.7;">'+(L?'Nenhuma unidade vinculada ainda. Abra ou crie uma ficha e toque em "vincular à minha conta".':'No units linked yet. Open or create a sheet and tap "link to my account".')+'</div>';return;}
   box.innerHTML=_myUnits.map(function(r,i){var d=r.data||{};return '<div style="display:flex;gap:8px;margin-bottom:8px;">'+
     '<button class="btn secondary" style="flex:1;text-align:left;padding:14px 12px;" onclick="bcOpenUnit(_myUnits['+i+'].id)"><b style="font-size:14px;">'+bcEsc(d.name||r.id)+'</b><br><span style="font-size:10px;color:rgba(0,255,136,0.55);">'+bcEsc(d.arc||'')+(d.cls?(' // '+bcEsc(d.cls)):'')+'</span></button>'+
+    '<button class="btn secondary" style="width:52px;" title="'+(L?'editar':'edit')+'" onclick="bcEditUnit('+i+')">✎</button>'+
     '<button class="btn secondary" style="width:52px;color:#ff6b6b;border-color:rgba(255,90,90,0.4);" title="'+(L?'apagar':'delete')+'" onclick="bcDeleteUnitIdx('+i+')">🗑</button>'+
   '</div>';}).join('');
 }
@@ -1994,8 +1994,11 @@ function refreshIdentity(){
   var ab=document.getElementById('sh-abilities');if(ab){ab.innerHTML='';buildExpandableAbilities(cls.abilities,ab);}
   persistSheet();
 }
-function openEditIdentity(){
-  if(!st||!st.currentId)return;
+var _editIdx=-1;
+function bcEditUnit(i){
+  if(!_myUnits[i])return;
+  _editIdx=i;
+  var d=_myUnits[i].data||{};
   var L=(currentLang==='PT');
   document.getElementById('edit-title').textContent=L?'// EDITAR IDENTIDADE':'// EDIT IDENTITY';
   document.getElementById('edit-lbl-name').textContent=L?'CODINOME':'CODENAME';
@@ -2003,20 +2006,29 @@ function openEditIdentity(){
   document.getElementById('edit-lbl-cls').textContent=L?'CLASSE':'CLASS';
   document.getElementById('edit-save').textContent=L?'SALVAR':'SAVE';
   document.getElementById('edit-cancel').textContent=L?'CANCELAR':'CANCEL';
-  var nameI=document.getElementById('edit-name');if(nameI)nameI.value=st.charName||'';
+  var nameI=document.getElementById('edit-name');if(nameI)nameI.value=d.name||'';
   var arcS=document.getElementById('edit-arc');
-  if(arcS){arcS.innerHTML='';Object.keys(ARCHETYPES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=PN(ARCHETYPES[k].name);if(k===st.arcResult)o.selected=true;arcS.appendChild(o);});}
+  if(arcS){arcS.innerHTML='';Object.keys(ARCHETYPES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=PN(ARCHETYPES[k].name);if(k===d.arc)o.selected=true;arcS.appendChild(o);});}
   var clsS=document.getElementById('edit-cls');
-  if(clsS){clsS.innerHTML='';Object.keys(CLASSES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=PN(k);if(k===st.classResult)o.selected=true;clsS.appendChild(o);});}
+  if(clsS){clsS.innerHTML='';Object.keys(CLASSES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=PN(k);if(k===d.cls)o.selected=true;clsS.appendChild(o);});}
   document.getElementById('edit-identity-modal').style.display='flex';
 }
 function closeEditIdentity(){var m=document.getElementById('edit-identity-modal');if(m)m.style.display='none';}
 function saveEditIdentity(){
+  if(_editIdx<0||!_myUnits[_editIdx]){closeEditIdentity();return;}
+  var r=_myUnits[_editIdx], d=r.data||{};
+  if(!d.id)d.id=r.id;
   var nameI=document.getElementById('edit-name'),arcS=document.getElementById('edit-arc'),clsS=document.getElementById('edit-cls');
-  if(nameI&&nameI.value.trim())st.charName=nameI.value.trim();
-  if(arcS&&ARCHETYPES[arcS.value])st.arcResult=arcS.value;
-  if(clsS&&CLASSES[clsS.value])st.classResult=clsS.value;
-  refreshIdentity();
+  if(nameI&&nameI.value.trim())d.name=nameI.value.trim();
+  if(arcS&&ARCHETYPES[arcS.value])d.arc=arcS.value;
+  if(clsS&&CLASSES[clsS.value])d.cls=clsS.value;
+  r.name=d.name;r.data=d;
+  var img=null;try{img=localStorage.getItem('bc_img_'+r.id);}catch(e){}
+  cloudSave(d,img);
+  try{localStorage.setItem('bc_'+r.id,JSON.stringify(d));}catch(e){}
+  /* se for a ficha aberta no momento, atualiza ela ao vivo também */
+  if(st&&st.currentId===r.id){st.charName=d.name;st.arcResult=d.arc;st.classResult=d.cls;refreshIdentity();}
+  renderMyUnits();
   closeEditIdentity();
   if(typeof pushNotify==='function')pushNotify(currentLang==='PT'?'Identidade atualizada. ✓':'Identity updated. ✓');
 }
@@ -2932,7 +2944,6 @@ function applyLang(){
   if(typeof renderNotifyLog==='function')renderNotifyLog();
   if(typeof updateNotifyPanelExportState==='function')updateNotifyPanelExportState();
   if(typeof bcUpdateAccountUI==='function')bcUpdateAccountUI();
-  var _ei=document.getElementById('sh-edit-identity');if(_ei)_ei.textContent=(currentLang==='PT'?'✎ editar identidade':'✎ edit identity');
   var en=document.getElementById('lang-en'),pt=document.getElementById('lang-pt');
   if(en)en.style.color=currentLang==='EN'?'#00ff88':'rgba(0,255,136,0.4)';
   if(pt)pt.style.color=currentLang==='PT'?'#00ff88':'rgba(0,255,136,0.4)';
