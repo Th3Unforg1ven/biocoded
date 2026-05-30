@@ -38,6 +38,13 @@
   .grp-row{display:flex;align-items:center;gap:6px;margin-top:10px;}
   .grp-lbl{font-size:10px;color:rgba(0,255,136,0.45);letter-spacing:1px;}
   .grp-row select{flex:1;background:#0a0f0c;border:1px solid rgba(0,255,136,0.3);color:#00ff88;font-family:inherit;font-size:11px;padding:5px;border-radius:5px;outline:none;}
+  .card-top{display:flex;gap:10px;align-items:center;margin-bottom:6px;}
+  .card-top h2{margin:0;}
+  .thumb{width:46px;height:46px;flex:0 0 46px;object-fit:cover;border:1px solid rgba(0,255,136,0.3);border-radius:6px;background:#0a0f0c;}
+  .thumb-empty{display:flex;align-items:center;justify-content:center;color:rgba(0,255,136,0.28);font-size:18px;}
+  .card[draggable=true]{cursor:grab;}
+  .card.dragging{opacity:0.45;}
+  .group-sec.dragover{outline:1px dashed rgba(0,255,136,0.55);outline-offset:4px;background:rgba(0,255,136,0.04);border-radius:8px;}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -102,7 +109,7 @@ function load(){
   if(!SESSION)return;
   document.getElementById('out').innerHTML='<div class="empty">carregando...</div>';
   Promise.all([
-    fetch(CLOUD.url+'/rest/v1/sheets?select=id,name,data,grupo,updated_at&order=updated_at.desc',{headers:headers()}).then(function(r){return r.ok?r.json():[];}).catch(function(){return [];}),
+    fetch(CLOUD.url+'/rest/v1/sheets?select=id,name,data,grupo,img,updated_at&order=updated_at.desc',{headers:headers()}).then(function(r){return r.ok?r.json():[];}).catch(function(){return [];}),
     fetch(CLOUD.url+'/rest/v1/gm_groups?select=name&order=name',{headers:headers()}).then(function(r){return r.ok?r.json():[];}).catch(function(){return [];})
   ]).then(function(res){
     ROWS=Array.isArray(res[0])?res[0]:[];
@@ -119,6 +126,12 @@ function createGroup(){
 
 function escJs(s){return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
 function sanitizeGroup(s){return String(s==null?'':s).replace(/['"\\]/g,'').trim();}
+function imgB64(r){if(!r||!r.img)return '';try{var o=(typeof r.img==='string')?JSON.parse(r.img):r.img;return (o&&o.b64)?o.b64:'';}catch(e){return '';}}
+function dragStart(ev,id){try{ev.dataTransfer.setData('text/plain',id);ev.dataTransfer.effectAllowed='move';}catch(e){}var c=ev.currentTarget;if(c)c.classList.add('dragging');}
+function dragEnd(ev){var c=ev.currentTarget;if(c)c.classList.remove('dragging');}
+function allowDrop(ev){ev.preventDefault();try{ev.dataTransfer.dropEffect='move';}catch(e){}ev.currentTarget.classList.add('dragover');}
+function dragLeaveSec(ev){if(!ev.currentTarget.contains(ev.relatedTarget))ev.currentTarget.classList.remove('dragover');}
+function dropGroup(ev,g){ev.preventDefault();ev.currentTarget.classList.remove('dragover');var id='';try{id=ev.dataTransfer.getData('text/plain');}catch(e){}if(id)assignGroup(id,g||null);}
 
 function gjson(extra){return Object.assign(headers(),{'Content-Type':'application/json','Prefer':extra||'return=minimal'});}
 function upsertGroup(name){return fetch(CLOUD.url+'/rest/v1/gm_groups',{method:'POST',headers:gjson('resolution=merge-duplicates'),body:JSON.stringify({name:name})});}
@@ -143,8 +156,10 @@ function render(){
     var d=r.data||{};
     var arc=esc(d.arc||'—'), cls=esc(d.cls||'—'), fac=d.faction?(' // '+esc(d.faction)):'';
     var link=APP_URL+'#'+encodeURIComponent(r.id);
-    return '<div class="card">'+
-      '<h2>'+esc(d.name||r.id)+'</h2>'+
+    var b64=imgB64(r);
+    var thumb=b64?('<img class="thumb" src="'+b64+'" alt=""/>'):'<div class="thumb thumb-empty">▣</div>';
+    return '<div class="card" draggable="true" ondragstart="dragStart(event,\''+esc(r.id)+'\')" ondragend="dragEnd(event)">'+
+      '<div class="card-top">'+thumb+'<h2>'+esc(d.name||r.id)+'</h2></div>'+
       '<div class="meta">'+arc+fac+'<br>classe: '+cls+'<br>sinal: '+esc(d.signal||0)+' &nbsp; relíquias: '+esc(d.relics||0)+'<br>atualizada: '+when(r.updated_at)+'</div>'+
       '<div class="id">'+esc(r.id)+'</div>'+
       '<div class="grp-row"><span class="grp-lbl">grupo:</span><select onchange="onGroupChange(\''+esc(r.id)+'\',this)">'+optsFor(r)+'</select></div>'+
@@ -158,7 +173,7 @@ function render(){
   allGroups.forEach(function(g){
     var items=byGroup[g]||[];
     if(!items.length && hasSearch) return;
-    html+='<div class="group-sec"><div class="group-hdr"><span class="group-name">'+esc(g)+'</span><span class="group-cnt">'+items.length+'</span>'+
+    html+='<div class="group-sec" ondragover="allowDrop(event)" ondragleave="dragLeaveSec(event)" ondrop="dropGroup(event,\''+escJs(g)+'\')"><div class="group-hdr"><span class="group-name">'+esc(g)+'</span><span class="group-cnt">'+items.length+'</span>'+
       '<span class="group-acts"><a href="#" title="renomear" onclick="renameGroup(\''+escJs(g)+'\');return false;">✎ renomear</a><a href="#" title="desfazer grupo" onclick="dissolveGroup(\''+escJs(g)+'\');return false;">✕ desfazer</a></span></div>';
     if(!items.length){html+='<div class="empty" style="margin:0 0 6px;">(grupo vazio — use o seletor "grupo" de um card para adicionar)</div>';}
     else{html+='<div class="grid">'+items.map(cardHtml).join('')+'</div>';}
@@ -167,7 +182,7 @@ function render(){
   // sem grupo
   var ung=byGroup['']||[];
   if(ung.length){
-    html+='<div class="group-sec"><div class="group-hdr"><span class="group-name">SEM GRUPO</span><span class="group-cnt">'+ung.length+'</span></div><div class="grid">'+ung.map(cardHtml).join('')+'</div></div>';
+    html+='<div class="group-sec" ondragover="allowDrop(event)" ondragleave="dragLeaveSec(event)" ondrop="dropGroup(event,\'\')"><div class="group-hdr"><span class="group-name">SEM GRUPO</span><span class="group-cnt">'+ung.length+'</span></div><div class="grid">'+ung.map(cardHtml).join('')+'</div></div>';
   }
   if(!html)html='<div class="empty">Nenhuma unidade.</div>';
   document.getElementById('out').innerHTML=html;
