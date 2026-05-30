@@ -952,6 +952,56 @@ This terminal creates and stores your character. The full Patient File explains 
 </div>
 
 <script>
+/* ===================== CLOUD SYNC (Supabase) =====================
+   COLE ABAIXO os dados do seu projeto Supabase (Project Settings > API).
+   Enquanto ficarem em branco, o app funciona normalmente, só no aparelho.
+   - url: Project URL  (ex: https://abcd1234.supabase.co)
+   - key: chave "anon public" (texto longo comecando com eyJ...)            */
+var CLOUD={
+  url:'https://wheanskxobszhatpyyqk.supabase.co',
+  key:'sb_publishable_X_79kaZaQ6V-je5uANotdg_WDJxfTsB'
+};
+var CLOUD_ON=(CLOUD.url.indexOf('http')===0 && CLOUD.key.length>20);
+function cloudHeaders(){return {'apikey':CLOUD.key,'Authorization':'Bearer '+CLOUD.key,'Content-Type':'application/json'};}
+function cloudImg(row){if(!row||!row.img)return null;try{return typeof row.img==='string'?JSON.parse(row.img):row.img;}catch(e){return null;}}
+function cloudSave(d,imgStr){
+  if(!CLOUD_ON||!d||!d.id)return;
+  var row={id:d.id,name:d.name||'',data:d,img:imgStr||null,updated_at:new Date().toISOString()};
+  fetch(CLOUD.url+'/rest/v1/sheets',{method:'POST',headers:Object.assign(cloudHeaders(),{'Prefer':'resolution=merge-duplicates'}),body:JSON.stringify(row)}).catch(function(){});
+}
+function cloudLoad(id){
+  if(!CLOUD_ON)return Promise.resolve(null);
+  return fetch(CLOUD.url+'/rest/v1/sheets?id=eq.'+encodeURIComponent(id)+'&select=*',{headers:cloudHeaders()})
+    .then(function(r){return r.json();}).then(function(rows){return (rows&&rows[0])?rows[0]:null;})
+    .catch(function(){return null;});
+}
+var _cloudTimer=null;
+function cloudSync(){
+  if(!CLOUD_ON||!st.currentId)return;
+  if(_cloudTimer)clearTimeout(_cloudTimer);
+  _cloudTimer=setTimeout(function(){
+    var d=null,img=null;
+    try{d=JSON.parse(localStorage.getItem('bc_'+st.currentId));}catch(e){}
+    try{img=localStorage.getItem('bc_img_'+st.currentId);}catch(e){}
+    if(d)cloudSave(d,img);
+  },1200);
+}
+function shareUrl(){return location.origin+location.pathname+'#'+(st.currentId||'');}
+function shareLink(){
+  if(!st.currentId)return;
+  var url=shareUrl(),L=(currentLang==='PT');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(function(){if(typeof pushNotify==='function')pushNotify(L?'Link copiado! Salve nos favoritos.':'Link copied! Bookmark it.');}).catch(function(){window.prompt(L?'Copie seu link de acesso:':'Copy your access link:',url);});
+  }else{window.prompt(L?'Copie seu link de acesso:':'Copy your access link:',url);}
+}
+function idBlockHTML(id){
+  var L=(currentLang==='PT');
+  var foot=CLOUD_ON
+    ? '<div class="unit-id-save" style="cursor:pointer;text-decoration:underline;" onclick="shareLink()">'+(L?'🔗 COPIAR LINK DE ACESSO':'🔗 COPY ACCESS LINK')+'</div>'
+    : '<div class="unit-id-save">'+(L?'SALVE ESTE CÓDIGO':'SAVE THIS CODE')+'</div>';
+  return '<div class="unit-id-label">'+(L?'ID DA UNIDADE':'UNIT ID')+'</div><div class="unit-id-val">'+id+'</div>'+foot;
+}
+/* ================================================================= */
 const ARCHETYPES={
 Naive:{name:"NAIVE",attrs:{FLESH:1,VEIL:2,METHOD:0},
   desc:"You still believe change is possible, not from ignorance, but from a deliberate refusal to give up. The signal tried to overwrite you. You chose to feel it instead.",
@@ -1742,7 +1792,7 @@ function buildSheet(){
 
   document.getElementById('sh-name').textContent=st.charName;
   updateIdentityText();
-  document.getElementById('sh-id').innerHTML=`<div class="unit-id-label">${currentLang==='PT'?'ID DA UNIDADE':'UNIT ID'}</div><div class="unit-id-val">${id}</div><div class="unit-id-save">${currentLang==='PT'?'SALVE ESTE CÓDIGO':'SAVE THIS CODE'}</div>`;
+  document.getElementById('sh-id').innerHTML=idBlockHTML(id);
   document.getElementById('sh-cls-icon').innerHTML=CLASS_ICONS[st.classResult]||'';
 
   // attrs + signal
@@ -2259,6 +2309,7 @@ function persistSheet(){
     d.notes=document.getElementById('sh-notes').value||'';d.story=(document.getElementById('sh-story')?document.getElementById('sh-story').value:'')||'';
     d.inventory=st.inventory;d.suitModules=st.suitModules||[];d.relics=st.relics||0;d.owned=st.owned||[];d.upgrades=st.upgrades||{};d.mementoSlots=st.mementoSlots||['','',''];
     localStorage.setItem('bc_'+st.currentId,JSON.stringify(d));
+    cloudSync();
   }catch(e){}
 }
 
@@ -2385,7 +2436,7 @@ function resetPortrait(){
 
 function savePortrait(){
   if(!st.currentId||!imgState.rawB64)return;
-  try{localStorage.setItem('bc_img_'+st.currentId,JSON.stringify({b64:imgState.rawB64,offsetX:imgState.offsetX,offsetY:imgState.offsetY,scale:imgState.scale}));}catch(e){}
+  try{localStorage.setItem('bc_img_'+st.currentId,JSON.stringify({b64:imgState.rawB64,offsetX:imgState.offsetX,offsetY:imgState.offsetY,scale:imgState.scale}));cloudSync();}catch(e){}
 }
 
 function showRetrieve(){show('s-retrieve');}
@@ -2400,7 +2451,7 @@ function applyUnit(d,img){
   if(d.inventory){st.inventory=d.inventory;buildInventoryUI(d.inventory);}
   st.clockMarked=d.clock||0;st.implantUsed=d.implantUsed||0;st.implantIdx=d.implantIdx||0;st.implantSlots=d.implantSlots||0;st.implantAbsorb=d.implantAbsorb||0;st.tally=d.tally||0;st.armorUsed=d.armorUsed||0;
   buildClock();buildImplantSlots();buildEchoResource();buildArmorTracker();renderRelics();buildOwned();buildShop();buildMementoSlots();
-  document.getElementById('sh-id').innerHTML='<div class="unit-id-label">'+(currentLang==='PT'?'ID DA UNIDADE':'UNIT ID')+'</div><div class="unit-id-val">'+st.currentId+'</div><div class="unit-id-save">'+(currentLang==='PT'?'SALVE ESTE CÓDIGO':'SAVE THIS CODE')+'</div>';
+  document.getElementById('sh-id').innerHTML=idBlockHTML(st.currentId);
   if(d.signal&&d.signal>0)setSignal(d.signal);
   st.overdrive=d.overdrive||0;buildOverdrive();
   if(d.notes)document.getElementById('sh-notes').value=d.notes;
@@ -2417,6 +2468,13 @@ function loadUnit(){
     var id=inp.toUpperCase();
     try{var raw=localStorage.getItem('bc_'+id);if(raw)d=JSON.parse(raw);}catch(e){}
     try{var ir=localStorage.getItem('bc_img_'+id);if(ir)img=JSON.parse(ir);}catch(e){}
+    if(!d&&CLOUD_ON){
+      cloudLoad(id).then(function(row){
+        if(row&&row.data){document.getElementById('ret-err').classList.add('hidden');applyUnit(row.data,cloudImg(row));}
+        else{document.getElementById('ret-err').classList.remove('hidden');}
+      });
+      return;
+    }
   }
   if(!d){document.getElementById('ret-err').classList.remove('hidden');return;}
   document.getElementById('ret-err').classList.add('hidden');
@@ -2661,7 +2719,7 @@ function applyLang(){
     buildArmorTracker();
     buildInventoryUI(st.inventory||{});
     updateIdentityText();
-    if(st.currentId)document.getElementById('sh-id').innerHTML='<div class="unit-id-label">'+(currentLang==='PT'?'ID DA UNIDADE':'UNIT ID')+'</div><div class="unit-id-val">'+st.currentId+'</div><div class="unit-id-save">'+(currentLang==='PT'?'SALVE ESTE CÓDIGO':'SAVE THIS CODE')+'</div>';
+    if(st.currentId)document.getElementById('sh-id').innerHTML=idBlockHTML(st.currentId);
   }
 }
 
@@ -3391,6 +3449,21 @@ function bindBootRun(){
 }
 bindBootRun();
 document.addEventListener('DOMContentLoaded',bindBootRun);
+function bcDeepLink(){
+  try{
+    var h=(location.hash||'').replace(/^#/,'').trim();
+    var q='';try{q=new URLSearchParams(location.search).get('id')||'';}catch(e){}
+    var id=(q||h||'').toUpperCase();
+    if(!id||id.length<5)return;
+    if(CLOUD_ON){
+      cloudLoad(id).then(function(row){if(row&&row.data)applyUnit(row.data,cloudImg(row));});
+    }else{
+      var raw=localStorage.getItem('bc_'+id);
+      if(raw){var img=null;try{img=JSON.parse(localStorage.getItem('bc_img_'+id));}catch(e){}applyUnit(JSON.parse(raw),img);}
+    }
+  }catch(e){}
+}
+document.addEventListener('DOMContentLoaded',function(){setTimeout(bcDeepLink,400);});
 document.addEventListener('click',function(e){
   if(e.target.closest&&e.target.closest('.app-corner,.sys-panel'))return;
   closeSystemPanels();

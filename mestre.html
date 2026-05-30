@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>BIOCODED // PAINEL DO MESTRE</title>
+<style>
+  :root{--g:#00ff88;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:#03070a;color:var(--g);font-family:'Share Tech Mono',ui-monospace,monospace;padding:24px;}
+  h1{font-size:20px;letter-spacing:3px;margin:0 0 4px;}
+  .sub{font-size:12px;color:rgba(0,255,136,0.5);margin-bottom:20px;}
+  .bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px;}
+  input{background:transparent;border:1px solid rgba(0,255,136,0.3);color:var(--g);padding:9px 12px;border-radius:6px;outline:none;font-family:inherit;font-size:13px;min-width:220px;}
+  button{background:transparent;border:1px solid var(--g);color:var(--g);padding:9px 14px;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;letter-spacing:1px;}
+  button:hover{background:rgba(0,255,136,0.12);}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .card{border:1px solid rgba(0,255,136,0.25);border-radius:10px;padding:16px;background:rgba(0,255,136,0.03);}
+  .card h2{font-size:15px;margin:0 0 6px;letter-spacing:1px;}
+  .meta{font-size:11px;color:rgba(0,255,136,0.55);line-height:1.7;}
+  .id{font-size:10px;color:rgba(0,255,136,0.4);word-break:break-all;margin-top:6px;}
+  .acts{display:flex;gap:8px;margin-top:12px;}
+  .acts a{flex:1;text-align:center;text-decoration:none;color:var(--g);border:1px solid rgba(0,255,136,0.4);border-radius:6px;padding:7px 0;font-size:11px;}
+  .acts a:hover{background:rgba(0,255,136,0.12);}
+  .empty{color:rgba(0,255,136,0.5);font-size:13px;margin-top:20px;}
+  .warn{color:#ff9900;font-size:13px;margin-top:20px;line-height:1.7;}
+  code{color:#fff;}
+</style>
+</head>
+<body>
+<!-- ===== COLE AQUI OS MESMOS DADOS DO SEU index.html ===== -->
+<script>
+var CLOUD={
+  url:'https://wheanskxobszhatpyyqk.supabase.co',
+  key:'sb_publishable_X_79kaZaQ6V-je5uANotdg_WDJxfTsB'
+};
+</script>
+<!-- ======================================================= -->
+
+<h1>BIOCODED // PAINEL DO MESTRE</h1>
+<div class="sub">Todas as unidades do grupo, atualizadas em tempo real.</div>
+
+<div class="bar">
+  <input id="q" placeholder="filtrar por nome ou ID..." oninput="render()"/>
+  <button onclick="load()">🔄 ATUALIZAR</button>
+  <span id="count" class="meta"></span>
+</div>
+
+<div id="out"></div>
+
+<script>
+var APP_URL='index.html'; // link base das fichas (mesmo diretorio)
+var ROWS=[];
+var CLOUD_ON=(CLOUD.url.indexOf('http')===0 && CLOUD.key.length>20);
+
+function headers(){return {'apikey':CLOUD.key,'Authorization':'Bearer '+CLOUD.key};}
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;'})[c];});}
+function when(t){if(!t)return'—';try{var d=new Date(t);return d.toLocaleString();}catch(e){return t;}}
+
+function load(){
+  if(!CLOUD_ON){
+    document.getElementById('out').innerHTML='<div class="warn">⚠ Cole a <b>url</b> e a <b>key</b> do Supabase no topo deste arquivo (os mesmos do <code>index.html</code>).</div>';
+    return;
+  }
+  document.getElementById('out').innerHTML='<div class="empty">carregando...</div>';
+  fetch(CLOUD.url+'/rest/v1/sheets?select=id,name,data,updated_at&order=updated_at.desc',{headers:headers()})
+    .then(function(r){return r.json();})
+    .then(function(rows){ROWS=Array.isArray(rows)?rows:[];render();})
+    .catch(function(){document.getElementById('out').innerHTML='<div class="warn">⚠ Não consegui conectar. Confira url/key e a política de leitura da tabela.</div>';});
+}
+
+function render(){
+  var q=(document.getElementById('q').value||'').toLowerCase();
+  var list=ROWS.filter(function(r){
+    var hay=((r.name||'')+' '+(r.id||'')).toLowerCase();
+    return hay.indexOf(q)>=0;
+  });
+  document.getElementById('count').textContent=list.length+' / '+ROWS.length+' unidades';
+  if(!list.length){document.getElementById('out').innerHTML='<div class="empty">Nenhuma unidade.</div>';return;}
+  var html='<div class="grid">';
+  list.forEach(function(r){
+    var d=r.data||{};
+    var arc=esc(d.arc||'—'), cls=esc(d.cls||'—'), fac=d.faction?(' // '+esc(d.faction)):'';
+    var link=APP_URL+'#'+encodeURIComponent(r.id);
+    html+='<div class="card">'+
+      '<h2>'+esc(d.name||r.id)+'</h2>'+
+      '<div class="meta">'+arc+fac+'<br>classe: '+cls+'<br>sinal: '+esc(d.signal||0)+' &nbsp; relíquias: '+esc(d.relics||0)+'<br>atualizada: '+when(r.updated_at)+'</div>'+
+      '<div class="id">'+esc(r.id)+'</div>'+
+      '<div class="acts"><a href="'+link+'" target="_blank">ABRIR FICHA</a>'+
+      '<a href="#" onclick="navigator.clipboard&&navigator.clipboard.writeText(location.origin+location.pathname.replace(/mestre\\.html$/,\'\')+\''+link+'\');this.textContent=\'COPIADO\';return false;">COPIAR LINK</a></div>'+
+      '</div>';
+  });
+  html+='</div>';
+  document.getElementById('out').innerHTML=html;
+}
+
+load();
+</script>
+</body>
+</html>
