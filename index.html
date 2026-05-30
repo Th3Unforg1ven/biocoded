@@ -306,7 +306,7 @@ html,body{background:#000;min-height:100vh;min-height:100dvh;width:100%;font-fam
 .unit-id-val{font-size:14px;color:#00ff88;letter-spacing:2px;font-family:'Orbitron',sans-serif;font-weight:700;}
 .unit-id-save{font-size:9px;color:rgba(0,255,136,0.65);}
 .sharelink-btn{cursor:pointer;color:rgba(0,255,136,0.5);font-size:9px;letter-spacing:1px;display:inline-flex;align-items:center;gap:4px;transition:color .2s;user-select:none;}
-.sharelink-btn:before{content:'🔗';font-size:8px;opacity:0.8;}
+.sharelink-btn:before{content:'📋';font-size:8px;opacity:0.8;}
 .sharelink-btn:hover{color:#00ff88;}
 .sharelink-btn.copied{color:#00ff88;}
 .sharelink-btn.copied:before{content:'✓';}
@@ -1073,10 +1073,11 @@ function bcSetUrl(){if(st&&st.currentId){try{history.replaceState(null,'',locati
 var _cloudOkShown=false;
 function cloudOkNotify(){if(_cloudOkShown||!CLOUD_ON)return;_cloudOkShown=true;if(typeof pushNotify==='function')pushNotify(currentLang==='PT'?'☁ Ficha salva na nuvem.':'☁ Sheet saved to cloud.');}
 function shareLinkNotify(){
-  var L=(currentLang==='PT'),url=shareUrl(),b=document.getElementById('notify-copylink');
-  function ok(){if(b){b.textContent=L?'✓ COPIADO':'✓ COPIED';setTimeout(function(){b.textContent=L?'COPIAR LINK':'COPY LINK';},1600);}}
-  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(url).then(ok).catch(function(){window.prompt(L?'Copie seu link:':'Copy your link:',url);});}
-  else{window.prompt(L?'Copie seu link:':'Copy your link:',url);}
+  var L=(currentLang==='PT'),id=(st&&st.currentId)?st.currentId:'',b=document.getElementById('notify-copylink');
+  if(!id)return;
+  function ok(){if(b){b.textContent=L?'✓ COPIADO':'✓ COPIED';setTimeout(function(){b.textContent=L?'COPIAR ID':'COPY ID';},1600);}}
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(id).then(ok).catch(function(){window.prompt(L?'Copie seu ID:':'Copy your ID:',id);});}
+  else{window.prompt(L?'Copie seu ID:':'Copy your ID:',id);}
 }
 function bcCloudNotifyUI(){
   var np=document.getElementById('notify-panel');if(!np||!CLOUD_ON)return;
@@ -1085,12 +1086,12 @@ function bcCloudNotifyUI(){
   var title=np.querySelector('.sys-panel-title');
   if(title){title.removeAttribute('data-i18n');title.textContent=L?'// NUVEM':'// CLOUD';}
   var body=np.querySelector('.sys-panel-body');
-  if(body){body.removeAttribute('data-i18n');body.textContent=L?'☁ Esta ficha salva sozinha na nuvem. Copie seu link de acesso e guarde-o para reabrir esta unidade em qualquer aparelho.':'☁ This sheet auto-saves to the cloud. Copy your access link and keep it to reopen this unit on any device.';}
+  if(body){body.removeAttribute('data-i18n');body.textContent=L?'☁ Esta ficha salva sozinha na nuvem. Copie o ID da unidade e guarde-o: com ele você recupera/reivindica esta ficha na sua conta a qualquer momento (em CARREGAR ID DA UNIDADE).':'☁ This sheet auto-saves to the cloud. Copy the unit ID and keep it: with it you can recover/claim this sheet to your account anytime (in LOAD UNIT ID).';}
   var actions=np.querySelector('.sys-panel-actions');
   if(actions){
     var b=document.getElementById('notify-copylink');
     if(!b){b=document.createElement('button');b.type='button';b.className='sys-mini-btn';b.id='notify-copylink';b.onclick=function(){shareLinkNotify();};actions.insertBefore(b,actions.firstChild);}
-    b.textContent=L?'COPIAR LINK':'COPY LINK';
+    b.textContent=L?'COPIAR ID':'COPY ID';
     var cb=document.getElementById('notify-claim');
     if(!cb){cb=document.createElement('button');cb.type='button';cb.className='sys-mini-btn';cb.id='notify-claim';cb.style.display='none';cb.onclick=function(){bcClaimCurrent();};actions.insertBefore(cb,b.nextSibling);}
     var lb=document.getElementById('notify-login');
@@ -1102,16 +1103,16 @@ function bcCloudNotifyUI(){
 }
 function shareLink(){
   if(!st.currentId)return;
-  var url=shareUrl(),L=(currentLang==='PT');
-  function feedback(){var el=document.getElementById('sh-sharelink');if(!el)return;el.classList.add('copied');el.textContent=L?'link copiado':'link copied';setTimeout(function(){el.classList.remove('copied');el.textContent=L?'copiar link':'copy link';},1800);}
+  var id=st.currentId,L=(currentLang==='PT');
+  function feedback(){var el=document.getElementById('sh-sharelink');if(!el)return;el.classList.add('copied');el.textContent=L?'ID copiado':'ID copied';setTimeout(function(){el.classList.remove('copied');el.textContent=L?'copiar ID':'copy ID';},1800);}
   if(navigator.clipboard&&navigator.clipboard.writeText){
-    navigator.clipboard.writeText(url).then(feedback).catch(function(){window.prompt(L?'Copie seu link de acesso:':'Copy your access link:',url);});
-  }else{window.prompt(L?'Copie seu link de acesso:':'Copy your access link:',url);}
+    navigator.clipboard.writeText(id).then(feedback).catch(function(){window.prompt(L?'Copie seu ID:':'Copy your ID:',id);});
+  }else{window.prompt(L?'Copie seu ID:':'Copy your ID:',id);}
 }
 function idBlockHTML(id){
   var L=(currentLang==='PT');
   var foot=CLOUD_ON
-    ? '<div id="sh-sharelink" class="sharelink-btn" onclick="shareLink()" title="'+(L?'Copiar link de acesso':'Copy access link')+'">'+(L?'copiar link':'copy link')+'</div>'
+    ? '<div id="sh-sharelink" class="sharelink-btn" onclick="shareLink()" title="'+(L?'Copiar ID da unidade':'Copy unit ID')+'">'+(L?'copiar ID':'copy ID')+'</div>'
     : '<div class="unit-id-save">'+(L?'SALVE ESTE CÓDIGO':'SAVE THIS CODE')+'</div>';
   return '<div class="unit-id-label">'+(L?'ID DA UNIDADE':'UNIT ID')+'</div><div class="unit-id-val">'+id+'</div>'+foot;
 }
