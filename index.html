@@ -1112,7 +1112,7 @@ function shareLink(){
 function idBlockHTML(id){
   var L=(currentLang==='PT');
   var foot=CLOUD_ON
-    ? '<div id="sh-sharelink" class="sharelink-btn" onclick="shareLink()" title="'+(L?'Copiar ID da unidade':'Copy unit ID')+'">'+(L?'copiar ID':'copy ID')+'</div>'
+    ? ''
     : '<div class="unit-id-save">'+(L?'SALVE ESTE CÓDIGO':'SAVE THIS CODE')+'</div>';
   return '<div class="unit-id-label">'+(L?'ID DA UNIDADE':'UNIT ID')+'</div><div class="unit-id-val">'+id+'</div>'+foot;
 }
@@ -1165,10 +1165,10 @@ function bcOpenMyUnits(){
 function renderMyUnits(){
   var box=document.getElementById('myunits-list');if(!box)return;var L=(currentLang==='PT');
   if(!_myUnits.length){box.innerHTML='<div style="color:rgba(0,255,136,0.5);font-size:13px;line-height:1.7;">'+(L?'Nenhuma unidade vinculada ainda. Abra ou crie uma ficha e toque em "vincular à minha conta".':'No units linked yet. Open or create a sheet and tap "link to my account".')+'</div>';return;}
-  box.innerHTML=_myUnits.map(function(r,i){var d=r.data||{};return '<div style="display:flex;gap:8px;margin-bottom:8px;">'+
+  box.innerHTML=_myUnits.map(function(r,i){var d=r.data||{};return '<div style="display:flex;gap:8px;margin-bottom:8px;align-items:stretch;">'+
     '<button class="btn secondary" style="flex:1;text-align:left;padding:14px 12px;" onclick="bcOpenUnit(_myUnits['+i+'].id)"><b style="font-size:14px;">'+bcEsc(d.name||r.id)+'</b><br><span style="font-size:10px;color:rgba(0,255,136,0.55);">'+bcEsc(d.arc||'')+(d.cls?(' // '+bcEsc(d.cls)):'')+'</span></button>'+
-    '<button class="btn secondary" style="width:52px;" title="'+(L?'editar':'edit')+'" onclick="bcEditUnit('+i+')">✎</button>'+
-    '<button class="btn secondary" style="width:52px;color:#ff6b6b;border-color:rgba(255,90,90,0.4);" title="'+(L?'apagar':'delete')+'" onclick="bcDeleteUnitIdx('+i+')">🗑</button>'+
+    '<button class="btn secondary" style="flex:0 0 46px;display:flex;align-items:center;justify-content:center;padding:0;font-size:15px;" title="'+(L?'editar':'edit')+'" onclick="bcEditUnit('+i+')">✎︎</button>'+
+    '<button class="btn secondary" style="flex:0 0 46px;display:flex;align-items:center;justify-content:center;padding:0;font-size:15px;color:#ff6b6b;border-color:rgba(255,90,90,0.4);" title="'+(L?'apagar':'delete')+'" onclick="bcDeleteUnitIdx('+i+')">✕</button>'+
   '</div>';}).join('');
 }
 function bcDeleteUnitIdx(i){
