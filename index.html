@@ -629,6 +629,7 @@ body{padding:0;touch-action:manipulation;}
   <div class="intro-btns" style="gap:10px;">
     <button class="btn" data-i18n="btn_initiate_scan" onclick="showCodename()">INITIATE SCAN</button>
     <button class="btn secondary" data-i18n="btn_load_unit" onclick="show('s-retrieve')">LOAD UNIT ID</button>
+    <button class="btn secondary install-btn" style="display:none;" onclick="bcInstall()">INSTALAR APP</button>
   </div>
 </div>
 
@@ -869,6 +870,7 @@ body{padding:0;touch-action:manipulation;}
       <div class="armor-tracker" id="sh-armor-tracker"></div>
     </div>
     <div class="file-actions">
+      <button class="btn install-btn" style="display:none;" onclick="bcInstall()">INSTALAR APP</button>
       <button class="btn secondary" onclick="exportChar()" data-i18n="btn_export">EXPORT FILE</button>
     </div>
     <div class="footer-brand">BIOCODED // PAMYEL // anti.</div>
@@ -918,6 +920,7 @@ body{padding:0;touch-action:manipulation;}
   <div id="tab-ref" class="sheet-page" style="display:none;overflow-y:auto;font-size:12px;line-height:1.85;color:rgba(0,255,136,0.85);gap:0;">
     <div style="margin-bottom:8px;"><span data-i18n="lib_nav_h" style="font-size:9px;color:rgba(0,255,136,0.38);letter-spacing:2px;">// NAVIGATION</span></div>
     <div style="display:flex;gap:8px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(0,255,136,0.1);flex-wrap:wrap;">
+      <button class="btn install-btn" style="display:none;flex:1;min-width:160px;padding:12px 8px;font-size:12px;" onclick="bcInstall()">INSTALAR APP</button>
       <button class="btn secondary" style="flex:1;min-width:160px;padding:12px 8px;font-size:12px;" onclick="exportChar()" data-i18n="btn_export">EXPORT FILE</button>
       <button class="btn secondary" style="flex:1;padding:12px 8px;font-size:12px;" onclick="show('s-retrieve')" data-i18n="btn_load">LOAD / IMPORT</button>
       <button class="btn secondary" style="flex:1;padding:12px 8px;font-size:12px;" onclick="show('s-intro')" data-i18n="btn_new_scan">NEW SCAN</button>
@@ -2733,6 +2736,7 @@ function applyLang(){
   if(typeof renderLibraryReference==='function')renderLibraryReference();
   if(typeof renderNotifyLog==='function')renderNotifyLog();
   if(typeof updateNotifyPanelExportState==='function')updateNotifyPanelExportState();
+  if(typeof bcShowInstall==='function'&&typeof bcIsStandalone==='function'&&!bcIsStandalone())bcShowInstall(true);
   var en=document.getElementById('lang-en'),pt=document.getElementById('lang-pt');
   if(en)en.style.color=currentLang==='EN'?'#00ff88':'rgba(0,255,136,0.4)';
   if(pt)pt.style.color=currentLang==='PT'?'#00ff88':'rgba(0,255,136,0.4)';
@@ -3511,6 +3515,29 @@ function bcDeepLink(){
 document.addEventListener('DOMContentLoaded',function(){setTimeout(bcDeepLink,400);});
 if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
 window.addEventListener('online',function(){try{if(typeof cloudSync==='function')cloudSync();}catch(e){}});
+
+/* ===== Instalar app (PWA) ===== */
+var _deferredInstall=null;
+function bcIsIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent||'');}
+function bcShowInstall(show){
+  var L=(currentLang==='PT');
+  var btns=document.querySelectorAll('.install-btn');
+  for(var i=0;i<btns.length;i++){btns[i].style.display=show?'':'none';btns[i].textContent=L?'INSTALAR APP':'INSTALL APP';}
+}
+function bcInstall(){
+  var L=(currentLang==='PT');
+  if(_deferredInstall){
+    _deferredInstall.prompt();
+    _deferredInstall.userChoice.then(function(){_deferredInstall=null;bcShowInstall(false);});
+    return;
+  }
+  if(bcIsStandalone()){alert(L?'O app já está instalado neste aparelho. ✓':'The app is already installed. ✓');return;}
+  if(bcIsIOS()){alert(L?'No iPhone (Safari): toque no botão Compartilhar (quadrado com seta ↑) na barra de baixo e escolha "Adicionar à Tela de Início".':'On iPhone (Safari): tap the Share button and choose "Add to Home Screen".');return;}
+  alert(L?'Para instalar: abra o menu do navegador (⋮) e toque em "Instalar app" / "Adicionar à tela inicial".\n\nObs.: o Firefox no PC não tem essa opção — use o Chrome ou o Edge no computador.':'To install: open the browser menu (⋮) and tap "Install app". Note: Firefox desktop has no install option — use Chrome or Edge.');
+}
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();_deferredInstall=e;bcShowInstall(true);});
+window.addEventListener('appinstalled',function(){_deferredInstall=null;bcShowInstall(false);if(typeof pushNotify==='function')pushNotify(currentLang==='PT'?'App instalado! ✓':'App installed! ✓');});
+document.addEventListener('DOMContentLoaded',function(){if(!bcIsStandalone())bcShowInstall(true);});
 document.addEventListener('click',function(e){
   if(e.target.closest&&e.target.closest('.app-corner,.sys-panel'))return;
   closeSystemPanels();

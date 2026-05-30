@@ -1,5 +1,5 @@
 /* BIOCODED service worker — offline app shell + caching */
-const CACHE = 'biocoded-v2';
+const CACHE = 'biocoded-v3';
 const SHELL = [
   './',
   './index.html',
