@@ -25,6 +25,15 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet"/>
+<!-- PWA -->
+<link rel="manifest" href="manifest.webmanifest"/>
+<meta name="theme-color" content="#03070a"/>
+<link rel="icon" type="image/png" href="icon-192.png"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="BIOCODED"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{background:#000;min-height:100vh;min-height:100dvh;width:100%;font-family:'Share Tech Mono',monospace;color:#00ff88;overflow-x:hidden;}
@@ -992,7 +1001,7 @@ function cloudSync(){
   },1200);
 }
 function shareUrl(){return location.origin+location.pathname+'#'+(st.currentId||'');}
-function bcSetUrl(){if(st&&st.currentId){try{history.replaceState(null,'',location.pathname+'#'+st.currentId);}catch(e){}}}
+function bcSetUrl(){if(st&&st.currentId){try{history.replaceState(null,'',location.pathname+'#'+st.currentId);}catch(e){}try{localStorage.setItem('bc_last',st.currentId);}catch(e){}}}
 var _cloudOkShown=false;
 function cloudOkNotify(){if(_cloudOkShown||!CLOUD_ON)return;_cloudOkShown=true;if(typeof pushNotify==='function')pushNotify(currentLang==='PT'?'☁ Ficha salva na nuvem.':'☁ Sheet saved to cloud.');}
 function shareLinkNotify(){
@@ -3481,21 +3490,25 @@ function bindBootRun(){
 }
 bindBootRun();
 document.addEventListener('DOMContentLoaded',bindBootRun);
+function bcLoadLocal(id){try{var raw=localStorage.getItem('bc_'+id);if(!raw)return false;var img=null;try{img=JSON.parse(localStorage.getItem('bc_img_'+id));}catch(e){}applyUnit(JSON.parse(raw),img);return true;}catch(e){return false;}}
+function bcLoadById(id){
+  if(!id)return;
+  if(CLOUD_ON){cloudLoad(id).then(function(row){if(row&&row.data)applyUnit(row.data,cloudImg(row));else bcLoadLocal(id);}).catch(function(){bcLoadLocal(id);});}
+  else bcLoadLocal(id);
+}
+function bcIsStandalone(){try{return (window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true;}catch(e){return false;}}
 function bcDeepLink(){
   try{
     var h=(location.hash||'').replace(/^#/,'').trim();
     var q='';try{q=new URLSearchParams(location.search).get('id')||'';}catch(e){}
     var id=(q||h||'').toUpperCase();
-    if(!id||id.length<5)return;
-    if(CLOUD_ON){
-      cloudLoad(id).then(function(row){if(row&&row.data)applyUnit(row.data,cloudImg(row));});
-    }else{
-      var raw=localStorage.getItem('bc_'+id);
-      if(raw){var img=null;try{img=JSON.parse(localStorage.getItem('bc_img_'+id));}catch(e){}applyUnit(JSON.parse(raw),img);}
-    }
+    if(id&&id.length>=5){bcLoadById(id);return;}
+    if(bcIsStandalone()){var last='';try{last=localStorage.getItem('bc_last')||'';}catch(e){}if(last&&last.length>=5)bcLoadById(last);}
   }catch(e){}
 }
 document.addEventListener('DOMContentLoaded',function(){setTimeout(bcDeepLink,400);});
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+window.addEventListener('online',function(){try{if(typeof cloudSync==='function')cloudSync();}catch(e){}});
 document.addEventListener('click',function(e){
   if(e.target.closest&&e.target.closest('.app-corner,.sys-panel'))return;
   closeSystemPanels();
