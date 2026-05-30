@@ -600,11 +600,11 @@ body{padding:0;touch-action:manipulation;}
 
 <!-- INTRO -->
 <div id="s-intro" class="screen hidden" style="justify-content:space-between;">
-  <div class="app-corner" style="position:fixed;top:14px;right:14px;z-index:200;">
-    <button type="button" class="app-icon-btn" id="intro-gear" onclick="toggleSettings(event)" title="Settings">⚙</button>
-  </div>
   <div>
-    <div class="glitch" data-text="BIOCODED" style="font-size:30px;display:block;">BIOCODED</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+      <div class="glitch" data-text="BIOCODED" style="font-size:30px;display:block;">BIOCODED</div>
+      <button type="button" class="app-icon-btn" id="intro-gear" onclick="toggleSettings(event)" title="Settings" style="flex:0 0 auto;">⚙</button>
+    </div>
     <div class="page-hdr-sub" data-i18n="intro_sub" style="margin-top:6px;margin-bottom:16px;">DESPERTO CLASSIFICATION PROTOCOL v.4.1</div>
     <div class="intro-status" style="font-size:12px;margin-bottom:14px;">
       <div data-i18n="intro_st1">CORTEX-NET SIGNAL: ANOMALY DETECTED</div>
