@@ -574,7 +574,7 @@ body{padding:0;touch-action:manipulation;}
     <button type="button" class="sys-mini-btn" id="settings-pt" onclick="setLang('PT');updateSettingsPanel()">PT-BR</button>
   </div>
   <div id="acct-section" style="margin-top:14px;border-top:1px solid rgba(0,255,136,0.12);padding-top:12px;">
-    <div class="sys-panel-body" style="margin-bottom:8px;">// CONTA</div>
+    <div class="sys-panel-body" id="acct-title" style="margin-bottom:8px;">// AUTHENTICATION</div>
     <div id="acct-who" style="font-size:10px;color:rgba(0,255,136,0.55);margin-bottom:8px;word-break:break-all;"></div>
     <div class="sys-panel-actions" style="flex-wrap:wrap;">
       <button type="button" class="sys-mini-btn" id="acct-login" onclick="bcLogin()">Entrar com Google</button>
@@ -1124,18 +1124,35 @@ function bcMyUnits(){
     .then(function(r){return r.json();}).then(function(rows){return Array.isArray(rows)?rows:[];}).catch(function(){return [];});
 }
 function bcOpenUnit(id){if(id&&SB){cloudLoad(id).then(function(row){if(row&&row.data)applyUnit(row.data,cloudImg(row));});}}
+var _myUnits=[];
 function bcOpenMyUnits(){
   show('s-myunits');
   var box=document.getElementById('myunits-list');var L=(currentLang==='PT');
   if(box)box.innerHTML='<div style="color:rgba(0,255,136,0.5);font-size:13px;">'+(L?'carregando...':'loading...')+'</div>';
-  bcMyUnits().then(function(rows){
-    if(!box)return;
-    if(!rows.length){box.innerHTML='<div style="color:rgba(0,255,136,0.5);font-size:13px;line-height:1.7;">'+(L?'Nenhuma unidade vinculada ainda. Abra ou crie uma ficha e toque em "vincular à minha conta".':'No units linked yet. Open or create a sheet and tap "link to my account".')+'</div>';return;}
-    box.innerHTML=rows.map(function(r){var d=r.data||{};return '<button class="btn secondary" style="width:100%;text-align:left;margin-bottom:8px;padding:14px 12px;" onclick="bcOpenUnit(\''+bcEsc(r.id)+'\')"><b style="font-size:14px;">'+bcEsc(d.name||r.id)+'</b><br><span style="font-size:10px;color:rgba(0,255,136,0.55);">'+bcEsc(d.arc||'')+(d.cls?(' // '+bcEsc(d.cls)):'')+'</span></button>';}).join('');
-  });
+  bcMyUnits().then(function(rows){_myUnits=rows||[];renderMyUnits();});
+}
+function renderMyUnits(){
+  var box=document.getElementById('myunits-list');if(!box)return;var L=(currentLang==='PT');
+  if(!_myUnits.length){box.innerHTML='<div style="color:rgba(0,255,136,0.5);font-size:13px;line-height:1.7;">'+(L?'Nenhuma unidade vinculada ainda. Abra ou crie uma ficha e toque em "vincular à minha conta".':'No units linked yet. Open or create a sheet and tap "link to my account".')+'</div>';return;}
+  box.innerHTML=_myUnits.map(function(r,i){var d=r.data||{};return '<div style="display:flex;gap:8px;margin-bottom:8px;">'+
+    '<button class="btn secondary" style="flex:1;text-align:left;padding:14px 12px;" onclick="bcOpenUnit(_myUnits['+i+'].id)"><b style="font-size:14px;">'+bcEsc(d.name||r.id)+'</b><br><span style="font-size:10px;color:rgba(0,255,136,0.55);">'+bcEsc(d.arc||'')+(d.cls?(' // '+bcEsc(d.cls)):'')+'</span></button>'+
+    '<button class="btn secondary" style="width:52px;color:#ff6b6b;border-color:rgba(255,90,90,0.4);" title="'+(L?'apagar':'delete')+'" onclick="bcDeleteUnitIdx('+i+')">🗑</button>'+
+  '</div>';}).join('');
+}
+function bcDeleteUnitIdx(i){
+  var r=_myUnits[i];if(!r||!CLOUD_ON||!_authUser)return;var L=(currentLang==='PT');
+  var nm=(r.data&&r.data.name)?r.data.name:r.id;
+  if(!confirm(L?('Apagar a unidade "'+nm+'" para sempre? Isto não pode ser desfeito.'):('Delete unit "'+nm+'" forever? This cannot be undone.')))return;
+  fetch(CLOUD.url+'/rest/v1/sheets?id=eq.'+encodeURIComponent(r.id),{method:'DELETE',headers:Object.assign(cloudHeaders(),{'Prefer':'return=minimal'})})
+   .then(function(resp){
+     if(resp&&resp.ok){try{localStorage.removeItem('bc_'+r.id);localStorage.removeItem('bc_img_'+r.id);}catch(e){}_myUnits.splice(i,1);renderMyUnits();if(typeof pushNotify==='function')pushNotify(L?'Unidade apagada.':'Unit deleted.');}
+     else if(typeof pushNotify==='function')pushNotify(L?'Não foi possível apagar.':'Could not delete.');
+   }).catch(function(){});
 }
 function bcUpdateAccountUI(){
   var L=(currentLang==='PT'),inApp=bcLoggedIn();
+  var acctTitle=document.getElementById('acct-title');
+  if(acctTitle)acctTitle.textContent=L?'// AUTENTICAÇÃO':'// AUTHENTICATION';
   var loginBtn=document.getElementById('acct-login'),logoutBtn=document.getElementById('acct-logout'),unitsBtn=document.getElementById('acct-units'),who=document.getElementById('acct-who');
   if(loginBtn){loginBtn.style.display=inApp?'none':'';loginBtn.textContent=L?'Entrar com Google':'Sign in with Google';}
   if(logoutBtn){logoutBtn.style.display=inApp?'':'none';logoutBtn.textContent=L?'Sair':'Sign out';}
