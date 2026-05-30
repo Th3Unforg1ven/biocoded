@@ -1008,7 +1008,10 @@ function bcOnAuth(session){
     var pend=null;try{pend=localStorage.getItem('bc_pending_claim');}catch(e){}
     if(pend){
       try{localStorage.removeItem('bc_pending_claim');}catch(e){}
-      bcClaim(pend).then(function(ok){if(ok&&typeof pushNotify==='function')pushNotify(currentLang==='PT'?'Ficha salva na sua conta. ✓':'Sheet saved to your account. ✓');});
+      bcClaim(pend).then(function(ok){
+        if(ok&&typeof pushNotify==='function')pushNotify(currentLang==='PT'?'Ficha salva na sua conta. ✓':'Sheet saved to your account. ✓');
+        if((!st||st.currentId!==pend)&&typeof bcOpenUnit==='function')bcOpenUnit(pend);
+      });
     }
   }
   if(typeof bcUpdateAccountUI==='function')bcUpdateAccountUI();
@@ -1103,7 +1106,10 @@ function bcLogin(){
   try{
     var openId=(st&&st.currentId)?st.currentId:'';
     if(openId){try{localStorage.setItem('bc_pending_claim',openId);}catch(e){}}
-    var rt=location.origin+location.pathname+(openId?('#'+openId):'');
+    /* IMPORTANTE: redirecionar para URL LIMPA (sem #fragmento), senão o
+       código do OAuth se corrompe e a sessão não é criada. A ficha aberta
+       é reaberta após o login via bc_pending_claim. */
+    var rt=location.origin+location.pathname;
     SB.auth.signInWithOAuth({provider:'google',options:{redirectTo:rt}});
   }catch(e){}
 }
