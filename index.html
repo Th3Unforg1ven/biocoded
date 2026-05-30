@@ -600,6 +600,9 @@ body{padding:0;touch-action:manipulation;}
 
 <!-- INTRO -->
 <div id="s-intro" class="screen hidden" style="justify-content:space-between;">
+  <div class="app-corner" style="position:fixed;top:14px;right:14px;z-index:200;">
+    <button type="button" class="app-icon-btn" id="intro-gear" onclick="toggleSettings(event)" title="Settings">⚙</button>
+  </div>
   <div>
     <div class="glitch" data-text="BIOCODED" style="font-size:30px;display:block;">BIOCODED</div>
     <div class="page-hdr-sub" data-i18n="intro_sub" style="margin-top:6px;margin-bottom:16px;">DESPERTO CLASSIFICATION PROTOCOL v.4.1</div>
@@ -634,7 +637,6 @@ body{padding:0;touch-action:manipulation;}
     <button class="btn" data-i18n="btn_initiate_scan" onclick="showCodename()">INITIATE SCAN</button>
     <button class="btn secondary" data-i18n="btn_load_unit" onclick="show('s-retrieve')">LOAD UNIT ID</button>
     <button class="btn secondary" id="intro-units" style="display:none;grid-column:1/-1;" onclick="bcOpenMyUnits()">MINHAS UNIDADES</button>
-    <button class="btn secondary" id="intro-login" style="display:none;grid-column:1/-1;" onclick="bcLogin()">ENTRAR COM GOOGLE</button>
   </div>
 </div>
 
@@ -1161,8 +1163,6 @@ function bcUpdateAccountUI(){
   if(who)who.textContent=inApp?(_authUser.email||''):'';
   var introUnits=document.getElementById('intro-units');
   if(introUnits)introUnits.style.display=inApp?'':'none';
-  var introLogin=document.getElementById('intro-login');
-  if(introLogin){introLogin.style.display=inApp?'none':'';introLogin.textContent=L?'ENTRAR COM GOOGLE':'SIGN IN WITH GOOGLE';}
   var hasSheet=(st&&st.currentId);
   var owned=(_currentOwner&&_authUser&&_currentOwner===_authUser.id);
   var claimBtn=document.getElementById('notify-claim');
