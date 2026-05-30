@@ -830,6 +830,7 @@ body{padding:0;touch-action:manipulation;}
         <div class="unit-name" id="sh-name">--</div>
         <div class="unit-arc" id="sh-arc">--</div>
         <div class="unit-class-name" id="sh-class-name">--</div>
+        <div id="sh-edit-identity" onclick="openEditIdentity()" style="cursor:pointer;font-size:9px;color:rgba(0,255,136,0.5);letter-spacing:1px;margin-top:5px;text-decoration:underline;display:inline-block;">✎ editar identidade</div>
       </div>
       <div class="unit-id-wrap">
         <div id="sh-cls-icon" class="unit-echo-icon"></div>
@@ -983,7 +984,24 @@ This terminal creates and stores your character. The full Patient File explains 
     <div id="myunits-list"></div>
   </div>
   <div style="display:flex;flex-direction:column;gap:10px;">
-    <button class="btn secondary" onclick="show('s-intro')">VOLTAR</button>
+    <button class="btn secondary" onclick="bcMyUnitsBack()">VOLTAR</button>
+  </div>
+</div>
+
+<!-- EDITAR IDENTIDADE -->
+<div id="edit-identity-modal" style="display:none;position:fixed;inset:0;z-index:400;background:rgba(0,0,0,0.82);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#050806;border:1px solid rgba(0,255,136,0.4);max-width:420px;width:100%;padding:22px;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,10px 100%,0 calc(100% - 10px));">
+    <div id="edit-title" style="font-size:14px;letter-spacing:2px;color:#00ff88;margin-bottom:16px;">// EDITAR IDENTIDADE</div>
+    <div id="edit-lbl-name" style="font-size:9px;color:rgba(0,255,136,0.5);letter-spacing:1px;margin-bottom:4px;">CODINOME</div>
+    <input id="edit-name" autocomplete="off" spellcheck="false" style="width:100%;background:#0a0f0c;border:1px solid rgba(0,255,136,0.3);color:#00ff88;padding:10px;font-family:'Share Tech Mono',monospace;font-size:14px;margin-bottom:14px;outline:none;"/>
+    <div id="edit-lbl-arc" style="font-size:9px;color:rgba(0,255,136,0.5);letter-spacing:1px;margin-bottom:4px;">ARQUÉTIPO</div>
+    <select id="edit-arc" style="width:100%;background:#0a0f0c;border:1px solid rgba(0,255,136,0.3);color:#00ff88;padding:10px;font-family:'Share Tech Mono',monospace;font-size:13px;margin-bottom:14px;outline:none;"></select>
+    <div id="edit-lbl-cls" style="font-size:9px;color:rgba(0,255,136,0.5);letter-spacing:1px;margin-bottom:4px;">CLASSE</div>
+    <select id="edit-cls" style="width:100%;background:#0a0f0c;border:1px solid rgba(0,255,136,0.3);color:#00ff88;padding:10px;font-family:'Share Tech Mono',monospace;font-size:13px;margin-bottom:6px;outline:none;"></select>
+    <div style="display:flex;gap:10px;margin-top:18px;">
+      <button class="btn" id="edit-save" style="flex:1;" onclick="saveEditIdentity()">SALVAR</button>
+      <button class="btn secondary" id="edit-cancel" style="flex:1;" onclick="closeEditIdentity()">CANCELAR</button>
+    </div>
   </div>
 </div>
 
@@ -1134,7 +1152,11 @@ function bcMyUnits(){
 }
 function bcOpenUnit(id){if(id&&SB){cloudLoad(id).then(function(row){if(row&&row.data)applyUnit(row.data,cloudImg(row));});}}
 var _myUnits=[];
+var _myUnitsFrom='s-intro';
+function bcMyUnitsBack(){show(_myUnitsFrom||'s-intro');}
 function bcOpenMyUnits(){
+  var sh=document.getElementById('s-sheet');
+  _myUnitsFrom=(sh&&!sh.classList.contains('hidden')&&st&&st.currentId)?'s-sheet':'s-intro';
   show('s-myunits');
   var box=document.getElementById('myunits-list');var L=(currentLang==='PT');
   if(box)box.innerHTML='<div style="color:rgba(0,255,136,0.5);font-size:13px;">'+(L?'carregando...':'loading...')+'</div>';
@@ -1958,6 +1980,46 @@ function updateIdentityText(){
   const subEl=document.getElementById('sh-threshold-sub');if(subEl)subEl.textContent=currentLang==='PT'?'VALOR FIXO':'FIXED VALUE';
 }
 
+/* ===== EDITAR IDENTIDADE (nome / arquétipo / classe) ===== */
+function refreshIdentity(){
+  var arc=ARCHETYPES[st.arcResult], cls=CLASSES[st.classResult];
+  if(!arc||!cls)return;
+  var nm=document.getElementById('sh-name');if(nm)nm.textContent=st.charName;
+  updateIdentityText();
+  var ci=document.getElementById('sh-cls-icon');if(ci)ci.innerHTML=CLASS_ICONS[st.classResult]||'';
+  var ag=document.querySelector('#sh-attrs-row .attr-group');
+  if(ag){ag.innerHTML='';Object.entries(arc.attrs).forEach(function(e){var pill=document.createElement('div');pill.className='attr-pill';pill.innerHTML='<span class="attr-key">'+attrLabel(e[0])+'</span><span class="attr-val">+'+e[1]+'</span>';ag.appendChild(pill);});}
+  var th=document.getElementById('sh-threshold');if(th)th.textContent=cls.thr;
+  var pa=document.getElementById('sh-passive');if(pa)pa.textContent=tdata(arc,'passive');
+  var ab=document.getElementById('sh-abilities');if(ab){ab.innerHTML='';buildExpandableAbilities(cls.abilities,ab);}
+  persistSheet();
+}
+function openEditIdentity(){
+  if(!st||!st.currentId)return;
+  var L=(currentLang==='PT');
+  document.getElementById('edit-title').textContent=L?'// EDITAR IDENTIDADE':'// EDIT IDENTITY';
+  document.getElementById('edit-lbl-name').textContent=L?'CODINOME':'CODENAME';
+  document.getElementById('edit-lbl-arc').textContent=L?'ARQUÉTIPO':'ARCHETYPE';
+  document.getElementById('edit-lbl-cls').textContent=L?'CLASSE':'CLASS';
+  document.getElementById('edit-save').textContent=L?'SALVAR':'SAVE';
+  document.getElementById('edit-cancel').textContent=L?'CANCELAR':'CANCEL';
+  var nameI=document.getElementById('edit-name');if(nameI)nameI.value=st.charName||'';
+  var arcS=document.getElementById('edit-arc');
+  if(arcS){arcS.innerHTML='';Object.keys(ARCHETYPES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=PN(ARCHETYPES[k].name);if(k===st.arcResult)o.selected=true;arcS.appendChild(o);});}
+  var clsS=document.getElementById('edit-cls');
+  if(clsS){clsS.innerHTML='';Object.keys(CLASSES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=PN(k);if(k===st.classResult)o.selected=true;clsS.appendChild(o);});}
+  document.getElementById('edit-identity-modal').style.display='flex';
+}
+function closeEditIdentity(){var m=document.getElementById('edit-identity-modal');if(m)m.style.display='none';}
+function saveEditIdentity(){
+  var nameI=document.getElementById('edit-name'),arcS=document.getElementById('edit-arc'),clsS=document.getElementById('edit-cls');
+  if(nameI&&nameI.value.trim())st.charName=nameI.value.trim();
+  if(arcS&&ARCHETYPES[arcS.value])st.arcResult=arcS.value;
+  if(clsS&&CLASSES[clsS.value])st.classResult=clsS.value;
+  refreshIdentity();
+  closeEditIdentity();
+  if(typeof pushNotify==='function')pushNotify(currentLang==='PT'?'Identidade atualizada. ✓':'Identity updated. ✓');
+}
 function buildSheet(){
   const arc=ARCHETYPES[st.arcResult];const cls=CLASSES[st.classResult];const w=WEAPONS[st.weaponIdx];
   const threshold=cls.thr;
@@ -2870,6 +2932,7 @@ function applyLang(){
   if(typeof renderNotifyLog==='function')renderNotifyLog();
   if(typeof updateNotifyPanelExportState==='function')updateNotifyPanelExportState();
   if(typeof bcUpdateAccountUI==='function')bcUpdateAccountUI();
+  var _ei=document.getElementById('sh-edit-identity');if(_ei)_ei.textContent=(currentLang==='PT'?'✎ editar identidade':'✎ edit identity');
   var en=document.getElementById('lang-en'),pt=document.getElementById('lang-pt');
   if(en)en.style.color=currentLang==='EN'?'#00ff88':'rgba(0,255,136,0.4)';
   if(pt)pt.style.color=currentLang==='PT'?'#00ff88':'rgba(0,255,136,0.4)';
