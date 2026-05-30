@@ -1001,6 +1001,13 @@ try{ if(window.supabase&&CLOUD_ON){ SB=window.supabase.createClient(CLOUD.url,CL
 function bcOnAuth(session){
   _authUser=session?session.user:null;
   _authToken=session?session.access_token:null;
+  if(_authUser){
+    var pend=null;try{pend=localStorage.getItem('bc_pending_claim');}catch(e){}
+    if(pend){
+      try{localStorage.removeItem('bc_pending_claim');}catch(e){}
+      bcClaim(pend).then(function(ok){if(ok&&typeof pushNotify==='function')pushNotify(currentLang==='PT'?'Ficha salva na sua conta. ✓':'Sheet saved to your account. ✓');});
+    }
+  }
   if(typeof bcUpdateAccountUI==='function')bcUpdateAccountUI();
 }
 if(SB){
@@ -1063,8 +1070,10 @@ function bcCloudNotifyUI(){
     b.textContent=L?'COPIAR LINK':'COPY LINK';
     var cb=document.getElementById('notify-claim');
     if(!cb){cb=document.createElement('button');cb.type='button';cb.className='sys-mini-btn';cb.id='notify-claim';cb.style.display='none';cb.onclick=function(){bcClaimCurrent();};actions.insertBefore(cb,b.nextSibling);}
+    var lb=document.getElementById('notify-login');
+    if(!lb){lb=document.createElement('button');lb.type='button';lb.className='sys-mini-btn';lb.id='notify-login';lb.style.display='none';lb.onclick=function(){bcLogin();};actions.insertBefore(lb,cb.nextSibling);}
     var others=actions.querySelectorAll('button');
-    for(var j=0;j<others.length;j++){var keep=(others[j].id==='notify-copylink'||others[j].id==='notify-claim');if(!keep)others[j].style.display='none';}
+    for(var j=0;j<others.length;j++){var keep=(others[j].id==='notify-copylink'||others[j].id==='notify-claim'||others[j].id==='notify-login');if(!keep)others[j].style.display='none';}
     if(typeof bcUpdateAccountUI==='function')bcUpdateAccountUI();
   }
 }
@@ -1088,7 +1097,12 @@ function bcEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){retu
 function bcLoggedIn(){return !!_authUser;}
 function bcLogin(){
   if(!SB){alert(currentLang==='PT'?'Login indisponível (sem conexão).':'Login unavailable (offline).');return;}
-  try{SB.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});}catch(e){}
+  try{
+    var openId=(st&&st.currentId)?st.currentId:'';
+    if(openId){try{localStorage.setItem('bc_pending_claim',openId);}catch(e){}}
+    var rt=location.origin+location.pathname+(openId?('#'+openId):'');
+    SB.auth.signInWithOAuth({provider:'google',options:{redirectTo:rt}});
+  }catch(e){}
 }
 function bcLogout(){
   if(!SB)return;
@@ -1129,8 +1143,12 @@ function bcUpdateAccountUI(){
   if(who)who.textContent=inApp?(_authUser.email||''):'';
   var introUnits=document.getElementById('intro-units');
   if(introUnits)introUnits.style.display=inApp?'':'none';
+  var hasSheet=(st&&st.currentId);
+  var owned=(_currentOwner&&_authUser&&_currentOwner===_authUser.id);
   var claimBtn=document.getElementById('notify-claim');
-  if(claimBtn){var owned=(_currentOwner&&_authUser&&_currentOwner===_authUser.id);claimBtn.style.display=(inApp&&st&&st.currentId&&!owned)?'':'none';claimBtn.textContent=L?'VINCULAR À MINHA CONTA':'LINK TO MY ACCOUNT';}
+  if(claimBtn){claimBtn.style.display=(inApp&&hasSheet&&!owned)?'':'none';claimBtn.textContent=L?'VINCULAR À MINHA CONTA':'LINK TO MY ACCOUNT';}
+  var loginBtnN=document.getElementById('notify-login');
+  if(loginBtnN){loginBtnN.style.display=(!inApp&&hasSheet)?'':'none';loginBtnN.textContent=L?'ENTRAR E SALVAR NA CONTA':'SIGN IN & SAVE TO ACCOUNT';}
 }
 /* ================================================================= */
 const ARCHETYPES={
